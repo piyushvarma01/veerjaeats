@@ -37,7 +37,7 @@ export const claimInitialAdmin = createServerFn({ method: "POST" })
     if ((count ?? 0) > 0) throw new Error("An administrator already exists");
     const { error } = await supabaseAdmin.from("user_roles").insert({ user_id: context.userId, role: "admin" });
     if (error) throw error;
-    return { ok: true, id: createdId };
+    return { ok: true };
   });
 
 export const getAdminData = createServerFn({ method: "GET" })

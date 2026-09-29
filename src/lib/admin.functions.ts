@@ -148,7 +148,7 @@ export const mutationSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("addReel"), title: z.string().min(2).max(120), mediaUrl: z.string().url(), caption: z.string().max(500), published: z.boolean() }),
   z.object({ action: z.literal("toggleReel"), id: z.string().uuid(), value: z.boolean() }),
   z.object({ action: z.literal("deleteReel"), id: z.string().uuid() }),
-  z.object({ action: z.literal("addProduct"), ...productFields, variants: z.array(variantInput).min(1).max(12) }),
+  z.object({ action: z.literal("addProduct"), ...productFields, variants: z.array(variantInput).min(1).max(12), images: z.array(z.object({ imageUrl: productImageUrl, altText: z.string().trim().max(160) })).max(12).default([]) }),
   z.object({ action: z.literal("editProduct"), id: z.string().uuid(), ...productFields }),
   variantInput.extend({ action: z.literal("addVariant"), productId: z.string().uuid() }),
   z.object({ action: z.literal("deleteVariant"), id: z.string().uuid() }),
@@ -158,7 +158,7 @@ export const mutationSchema = z.discriminatedUnion("action", [
     productId: z.string().uuid(),
     images: z.array(z.object({ imageUrl: productImageUrl, altText: z.string().trim().max(160) })).min(1).max(12),
   }),
-  z.object({ action: z.literal("updateProductImage"), id: z.string().uuid(), altText: z.string().trim().max(160) }),
+  z.object({ action: z.literal("updateProductImage"), id: z.string().uuid(), altText: z.string().trim().max(160), imageUrl: productImageUrl.optional() }),
   z.object({ action: z.literal("deleteProductImage"), id: z.string().uuid() }),
   z.object({ action: z.literal("setPrimaryImage"), productId: z.string().uuid(), id: z.string().uuid() }),
   z.object({ action: z.literal("reorderProductImages"), productId: z.string().uuid(), ids: z.array(z.string().uuid()).max(24) }),
@@ -215,6 +215,7 @@ export const mutateAdminData = createServerFn({ method: "POST" })
   .handler(async ({ context, data }) => {
     const db = await getAdminClientFor(context.userId);
     let result;
+    let createdId: string | null = null;
     if (data.action === "orderStatus") result = await db.from("orders").update({ status: data.value }).eq("id", data.id);
     else if (data.action === "reviewStatus") result = await db.from("reviews").update({ status: data.value }).eq("id", data.id);
     else if (data.action === "updateReview") result = await db.from("reviews").update({ customer_name: data.customerName, city: data.city, rating: data.rating, review: data.review, status: data.status }).eq("id", data.id);
@@ -286,8 +287,11 @@ export const mutateAdminData = createServerFn({ method: "POST" })
         await db.from("products").delete().eq("id", created.id);
         throw result.error;
       }
-      if (data.imageUrl) {
-        await db.from("product_images").insert({ product_id: created.id, image_url: data.imageUrl, alt_text: data.name, sort_order: 0, is_primary: true });
+      createdId = created.id;
+      const images = data.images.length ? data.images.filter((i) => i.imageUrl) : data.imageUrl ? [{ imageUrl: data.imageUrl, altText: data.name }] : [];
+      if (images.length) {
+        await db.from("product_images").insert(images.map((image, index) => ({ product_id: created.id, image_url: image.imageUrl, alt_text: image.altText || data.name, sort_order: index, is_primary: index === 0 })));
+        await db.from("products").update({ image_url: images[0]!.imageUrl }).eq("id", created.id);
       }
     } else if (data.action === "editProduct") {
       result = await db.from("products").update(productRow(data)).eq("id", data.id);
@@ -310,7 +314,13 @@ export const mutateAdminData = createServerFn({ method: "POST" })
         await db.from("products").update({ image_url: data.images[0].imageUrl }).eq("id", data.productId);
       }
     } else if (data.action === "updateProductImage") {
-      result = await db.from("product_images").update({ alt_text: data.altText }).eq("id", data.id);
+      const patch: { alt_text: string; image_url?: string } = { alt_text: data.altText };
+      if (data.imageUrl) patch.image_url = data.imageUrl;
+      result = await db.from("product_images").update(patch).eq("id", data.id);
+      if (data.imageUrl) {
+        const { data: image } = await db.from("product_images").select("product_id,is_primary").eq("id", data.id).maybeSingle();
+        if (image?.is_primary) await db.from("products").update({ image_url: data.imageUrl }).eq("id", image.product_id);
+      }
     } else if (data.action === "deleteProductImage") {
       const { data: image } = await db.from("product_images").select("id,product_id,image_url,is_primary").eq("id", data.id).maybeSingle();
       result = await db.from("product_images").delete().eq("id", data.id);
@@ -361,5 +371,5 @@ export const mutateAdminData = createServerFn({ method: "POST" })
     }
 
     if (result.error) throw result.error;
-    return { ok: true };
+    return { ok: true, id: createdId };
   });

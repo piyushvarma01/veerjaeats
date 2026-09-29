@@ -8,3 +8,4 @@
 > Commits you push to the connected branch sync back to Lovable and show up in
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
+- Admin panel screens live in src/components/admin/ as reusable panels; the admin route only handles layout and navigation. Why: keeps the route small and makes it easy to add sections.

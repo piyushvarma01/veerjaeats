@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { BadgeCheck, ShoppingBag, Star, Truck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,6 +25,11 @@ export type CatalogProduct = {
   short_name: string;
   description: string;
   image_url: string | null;
+  is_bestseller?: boolean;
+  is_new_arrival?: boolean;
+  is_featured?: boolean;
+  images?: { url: string; alt: string }[];
+  category?: { name: string; slug: string; sort_order: number } | null;
   product_variants: Variant[];
 };
 
@@ -41,15 +47,22 @@ const discountOf = (variant: Variant) =>
 
 export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   const [sort, setSort] = useState<SortKey>("featured");
+  const [cat, setCat] = useState("all");
+  const categories = useMemo(() => {
+    const map = new Map<string, { name: string; slug: string; sort_order: number }>();
+    products.forEach((p) => p.category && map.set(p.category.slug, p.category));
+    return [...map.values()].sort((a, b) => a.sort_order - b.sort_order);
+  }, [products]);
 
   const sorted = useMemo(() => {
-    const list = [...products];
+    const list = products.filter((p) => cat === "all" || p.category?.slug === cat);
+    if (sort === "featured") list.sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)));
     const best = (product: CatalogProduct) => product.product_variants[0]!;
     if (sort === "price-asc") list.sort((a, b) => best(a).price - best(b).price);
     if (sort === "price-desc") list.sort((a, b) => best(b).price - best(a).price);
     if (sort === "discount") list.sort((a, b) => discountOf(best(b)) - discountOf(best(a)));
     return list;
-  }, [products, sort]);
+  }, [products, sort, cat]);
 
   return (
     <section id="our-ghee" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
@@ -59,7 +72,15 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
         subtitle="Pick your pack size, check the savings, and add it straight to your cart."
       />
 
-      <div className="mt-8 flex flex-wrap items-center gap-3 border-y border-border py-3">
+      {categories.length > 1 && (
+        <div className="mt-8 flex flex-wrap gap-2">
+          {[{ slug: "all", name: "All products" }, ...categories].map((c) => (
+            <button key={c.slug} onClick={() => setCat(c.slug)} className={cn("rounded-full border px-4 py-1.5 text-sm font-medium transition-colors", cat === c.slug ? "border-gold bg-gold text-brown" : "border-border bg-card text-foreground/70 hover:border-gold/60")}>{c.name}</button>
+          ))}
+        </div>
+      )}
+
+      <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-border py-3">
         <span className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
           Sort by
         </span>
@@ -78,7 +99,7 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
           </button>
         ))}
         <span className="ml-auto text-sm text-muted-foreground">
-          {products.length} {products.length === 1 ? "product" : "products"}
+          {sorted.length} {sorted.length === 1 ? "product" : "products"}
         </span>
       </div>
 
@@ -99,7 +120,8 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   const variant =
     product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0]!;
   const discount = discountOf(variant);
-  const image = product.image_url ?? gheeJar;
+  const gallery = product.images?.length ? product.images : [{ url: product.image_url ?? gheeJar, alt: product.name }];
+  const image = gallery[0]!.url;
   const outOfStock = variant.stock <= 0;
 
   const add = () => {
@@ -116,21 +138,19 @@ function ProductCard({ product }: { product: CatalogProduct }) {
 
   return (
     <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-warm transition-shadow hover:shadow-warm-lg">
-      <div className="relative overflow-hidden bg-beige p-3">
-        <img
-          src={image}
-          alt={product.name}
-          loading="lazy"
-          className="mx-auto h-56 w-full object-contain transition-transform duration-700 hover:scale-105"
-        />
-
+      <div className="relative overflow-hidden bg-beige">
+        <ProductGallery images={gallery} name={product.name} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             {discount}% off
           </span>
         )}
+        <div className="pointer-events-none absolute top-3 right-3 flex flex-col items-end gap-1">
+          {product.is_bestseller && <span className="rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-brown">Bestseller</span>}
+          {product.is_new_arrival && <span className="rounded-full bg-brown px-2.5 py-1 text-xs font-semibold text-cream">New</span>}
+        </div>
         {outOfStock && (
-          <span className="absolute inset-0 grid place-items-center bg-brown/55 text-sm font-semibold text-cream">
+          <span className="pointer-events-none absolute inset-0 grid place-items-center bg-brown/55 text-sm font-semibold text-cream">
             Out of stock
           </span>
         )}
@@ -213,5 +233,75 @@ function ProductCard({ product }: { product: CatalogProduct }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function ProductGallery({ images, name }: { images: { url: string; alt: string }[]; name: string }) {
+  const [active, setActive] = useState(0);
+  const [open, setOpen] = useState(false);
+  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
+  const track = useRef<HTMLDivElement>(null);
+  const go = (index: number) => {
+    setActive(index);
+    const el = track.current;
+    if (el) el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
+  };
+  return (
+    <div>
+      <div
+        ref={track}
+        onScroll={(e) => { const el = e.currentTarget; const i = Math.round(el.scrollLeft / el.clientWidth); if (i !== active) setActive(i); }}
+        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {images.map((img, i) => (
+          <button key={i} type="button" onClick={() => { setActive(i); setOpen(true); }} className="w-full shrink-0 snap-center p-3" aria-label={`View photo ${i + 1} of ${name}`}>
+            <img src={img.url} alt={img.alt || name} loading="lazy" className="mx-auto h-56 w-full cursor-zoom-in object-contain" />
+          </button>
+        ))}
+      </div>
+      {images.length > 1 && (
+        <>
+          <div className="flex justify-center gap-1.5 pb-2 sm:hidden">
+            {images.map((_, i) => <span key={i} className={cn("h-1.5 rounded-full transition-all", i === active ? "w-5 bg-gold-deep" : "w-1.5 bg-brown/25")} />)}
+          </div>
+          <div className="hidden gap-2 px-3 pb-3 sm:flex">
+            {images.slice(0, 6).map((img, i) => (
+              <button key={i} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1}`} className={cn("h-12 w-12 overflow-hidden rounded-md border-2 bg-card", i === active ? "border-gold" : "border-transparent opacity-70 hover:opacity-100")}>
+                <img src={img.url} alt="" className="h-full w-full object-contain" />
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <Dialog open={open} onOpenChange={(o) => { setOpen(o); setZoom(null); }}>
+        <DialogContent className="max-w-5xl bg-card p-3">
+          <DialogTitle className="sr-only">{name} photos</DialogTitle>
+          <div
+            className="relative h-[70vh] overflow-hidden rounded-lg bg-beige"
+            onMouseMove={(e) => { if (!zoom) return; const r = e.currentTarget.getBoundingClientRect(); setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
+            onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setZoom(zoom ? null : { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
+          >
+            <img src={images[active]!.url} alt={images[active]!.alt || name}
+              style={zoom ? { transform: "scale(2.2)", transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}
+              className={cn("h-full w-full object-contain transition-transform duration-200", zoom ? "cursor-zoom-out" : "cursor-zoom-in")} />
+            {images.length > 1 && (
+              <>
+                <button type="button" aria-label="Previous photo" onClick={(e) => { e.stopPropagation(); setZoom(null); setActive((active - 1 + images.length) % images.length); }} className="absolute top-1/2 left-3 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-xl text-brown shadow">‹</button>
+                <button type="button" aria-label="Next photo" onClick={(e) => { e.stopPropagation(); setZoom(null); setActive((active + 1) % images.length); }} className="absolute top-1/2 right-3 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-xl text-brown shadow">›</button>
+              </>
+            )}
+          </div>
+          {images.length > 1 && (
+            <div className="flex justify-center gap-2 overflow-x-auto pt-2">
+              {images.map((img, i) => (
+                <button key={i} type="button" onClick={() => { setActive(i); setZoom(null); }} className={cn("h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 bg-beige", i === active ? "border-gold" : "border-transparent opacity-70")}>
+                  <img src={img.url} alt="" className="h-full w-full object-contain" />
+                </button>
+              ))}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

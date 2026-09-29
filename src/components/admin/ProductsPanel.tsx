@@ -103,7 +103,7 @@ function ProductList({ products, categories, mutate, onEdit }: { products: Admin
 
       {/* Desktop table */}
       <div className="hidden overflow-x-auto rounded-xl border border-border bg-card shadow-warm md:block">
-        <table className="w-full min-w-[900px] text-left text-sm">
+        <table className="w-full min-w-[900px] text-left text-sm [&_td]:px-3 [&_th]:px-3">
           <thead className="border-b border-border bg-beige/40 text-xs uppercase text-muted-foreground">
             <tr>{canReorder && <th className="w-12 px-3" />}<th className="px-4 py-3">Product</th><th>Category</th><th>Price</th><th>Stock</th><th>Status</th><th>Featured</th><th>Added</th><th className="px-4 text-right">Actions</th></tr>
           </thead>

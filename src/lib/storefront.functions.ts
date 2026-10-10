@@ -41,7 +41,7 @@ export const getStorefrontProducts = createServerFn({ method: "GET" }).handler(a
   try {
     const { data, error } = await publicClient()
       .from("products")
-      .select("id,slug,name,short_name,description,short_description,image_url,sort_order,is_featured,is_bestseller,is_new_arrival,categories(name,slug,sort_order,is_published),product_images(image_url,alt_text,sort_order,is_primary,variant_id),product_variants(id,sku,label,price,mrp,stock,is_active,sort_order)")
+      .select("id,slug,name,short_name,description,short_description,weight,tags,image_url,sort_order,is_featured,is_bestseller,is_new_arrival,categories(name,slug,sort_order,is_published),product_images(image_url,alt_text,sort_order,is_primary,variant_id),product_variants(id,sku,label,price,mrp,stock,is_active,sort_order)")
       .eq("is_active", true)
       .order("sort_order")
       .order("created_at");

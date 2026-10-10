@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
 import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as ApiPublicProductImageRouteImport } from './routes/api/public/product-image'
+import { Route as ApiPublicReviewMediaRouteImport } from './routes/api/public/review-media'
 import { Route as ApiPublicSiteImageRouteImport } from './routes/api/public/site-image'
 
 const IndexRoute = IndexRouteImport.update({
@@ -46,6 +47,11 @@ const ApiPublicProductImageRoute = ApiPublicProductImageRouteImport.update({
   path: '/api/public/product-image',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicReviewMediaRoute = ApiPublicReviewMediaRouteImport.update({
+  id: '/api/public/review-media',
+  path: '/api/public/review-media',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSiteImageRoute = ApiPublicSiteImageRouteImport.update({
   id: '/api/public/site-image',
   path: '/api/public/site-image',
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AuthenticatedAdminRoute
   '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
+  '/api/public/review-media': typeof ApiPublicReviewMediaRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
 export interface FileRoutesByTo {
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminRoute
   '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
+  '/api/public/review-media': typeof ApiPublicReviewMediaRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
 export interface FileRoutesById {
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
+  '/api/public/review-media': typeof ApiPublicReviewMediaRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
 export interface FileRouteTypes {
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/product/$slug'
     | '/api/public/product-image'
+    | '/api/public/review-media'
     | '/api/public/site-image'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/product/$slug'
     | '/api/public/product-image'
+    | '/api/public/review-media'
     | '/api/public/site-image'
   id:
     | '__root__'
@@ -103,6 +114,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin'
     | '/product/$slug'
     | '/api/public/product-image'
+    | '/api/public/review-media'
     | '/api/public/site-image'
   fileRoutesById: FileRoutesById
 }
@@ -112,6 +124,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   ProductSlugRoute: typeof ProductSlugRoute
   ApiPublicProductImageRoute: typeof ApiPublicProductImageRoute
+  ApiPublicReviewMediaRoute: typeof ApiPublicReviewMediaRoute
   ApiPublicSiteImageRoute: typeof ApiPublicSiteImageRoute
 }
 
@@ -159,6 +172,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicProductImageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/review-media': {
+      id: '/api/public/review-media'
+      path: '/api/public/review-media'
+      fullPath: '/api/public/review-media'
+      preLoaderRoute: typeof ApiPublicReviewMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/site-image': {
       id: '/api/public/site-image'
       path: '/api/public/site-image'
@@ -186,6 +206,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   ProductSlugRoute: ProductSlugRoute,
   ApiPublicProductImageRoute: ApiPublicProductImageRoute,
+  ApiPublicReviewMediaRoute: ApiPublicReviewMediaRoute,
   ApiPublicSiteImageRoute: ApiPublicSiteImageRoute,
 }
 export const routeTree = rootRouteImport

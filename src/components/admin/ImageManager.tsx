@@ -16,8 +16,8 @@ type Props = {
   onDelete: (id: string) => void;
   onAlt: (id: string, alt: string) => void;
   onReplace: (id: string, file: File) => Promise<void>;
-  variants?: { id: string; label: string }[];
-  onVariant?: (id: string, variantId: string | null) => void;
+  variants?: { id: string; label: string }[] | undefined;
+  onVariant?: ((id: string, variantId: string | null) => void) | undefined;
 };
 
 export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete, onAlt, onReplace, variants, onVariant }: Props) {

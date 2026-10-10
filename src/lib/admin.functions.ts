@@ -160,6 +160,7 @@ export const mutationSchema = z.discriminatedUnion("action", [
   }),
   z.object({ action: z.literal("updateProductImage"), id: z.string().uuid(), altText: z.string().trim().max(160), imageUrl: productImageUrl.optional() }),
   z.object({ action: z.literal("deleteProductImage"), id: z.string().uuid() }),
+  z.object({ action: z.literal("setImageVariant"), id: z.string().uuid(), variantId: z.string().uuid().nullable() }),
   z.object({ action: z.literal("setPrimaryImage"), productId: z.string().uuid(), id: z.string().uuid() }),
   z.object({ action: z.literal("reorderProductImages"), productId: z.string().uuid(), ids: z.array(z.string().uuid()).max(24) }),
   z.object({ action: z.literal("addCategory"), ...categoryFields }),
@@ -321,6 +322,8 @@ export const mutateAdminData = createServerFn({ method: "POST" })
         const { data: image } = await db.from("product_images").select("product_id,is_primary").eq("id", data.id).maybeSingle();
         if (image?.is_primary) await db.from("products").update({ image_url: data.imageUrl }).eq("id", image.product_id);
       }
+    } else if (data.action === "setImageVariant") {
+      result = await db.from("product_images").update({ variant_id: data.variantId }).eq("id", data.id);
     } else if (data.action === "deleteProductImage") {
       const { data: image } = await db.from("product_images").select("id,product_id,image_url,is_primary").eq("id", data.id).maybeSingle();
       result = await db.from("product_images").delete().eq("id", data.id);

@@ -41,7 +41,7 @@ export const getStorefrontProducts = createServerFn({ method: "GET" }).handler(a
   try {
     const { data, error } = await publicClient()
       .from("products")
-      .select("id,slug,name,short_name,description,short_description,image_url,sort_order,is_featured,is_bestseller,is_new_arrival,categories(name,slug,sort_order,is_published),product_images(image_url,alt_text,sort_order,is_primary),product_variants(id,label,price,mrp,stock,is_active,sort_order)")
+      .select("id,slug,name,short_name,description,short_description,image_url,sort_order,is_featured,is_bestseller,is_new_arrival,categories(name,slug,sort_order,is_published),product_images(image_url,alt_text,sort_order,is_primary,variant_id),product_variants(id,sku,label,price,mrp,stock,is_active,sort_order)")
       .eq("is_active", true)
       .order("sort_order")
       .order("created_at");
@@ -51,7 +51,7 @@ export const getStorefrontProducts = createServerFn({ method: "GET" }).handler(a
       category: categories && categories.is_published ? { name: categories.name, slug: categories.slug, sort_order: categories.sort_order } : null,
       images: [...product_images]
         .sort((a, b) => Number(b.is_primary) - Number(a.is_primary) || a.sort_order - b.sort_order)
-        .map((image) => ({ url: image.image_url, alt: image.alt_text })),
+        .map((image) => ({ url: image.image_url, alt: image.alt_text, variantId: image.variant_id })),
       product_variants: product.product_variants
         .filter((variant) => variant.is_active)
         .sort((a, b) => a.sort_order - b.sort_order || a.price - b.price),

@@ -573,6 +573,33 @@ export type Database = {
           },
         ]
       }
+      site_images: {
+        Row: {
+          alt_text: string
+          created_at: string
+          image_url: string
+          slot: string
+          storage_path: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string
+          created_at?: string
+          image_url: string
+          slot: string
+          storage_path: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string
+          created_at?: string
+          image_url?: string
+          slot?: string
+          storage_path?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       site_settings: {
         Row: {
           created_at: string

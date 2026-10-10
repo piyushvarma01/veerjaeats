@@ -43,6 +43,13 @@
       "when": 1791630239351,
       "tag": "0005_cost_and_returns",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1791630492844,
+      "tag": "0006_site_images",
+      "breakpoints": true
     }
   ]
 }

@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/public/site-image")({
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         const [{ data: settings }, { data: gallery }] = await Promise.all([
           supabaseAdmin.from("site_settings").select("id").eq("logo_url", imageUrl).maybeSingle(),
-          supabaseAdmin.from("gallery_images").select("id").eq("image_url", imageUrl).eq("is_published", true).maybeSingle(),
+          supabaseAdmin.from("gallery_images").select("id").eq("image_url", imageUrl).maybeSingle(),
         ]);
 
         if (!settings && !gallery) return new Response("Image not found", { status: 404 });

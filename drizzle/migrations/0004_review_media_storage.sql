@@ -1,0 +1,3 @@
+CREATE POLICY "Customers upload own review media" ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'review-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Customers delete own review media" ON storage.objects FOR DELETE TO authenticated USING (bucket_id = 'review-media' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "Admins manage review media files" ON storage.objects FOR ALL TO authenticated USING (bucket_id = 'review-media' AND private.has_role(auth.uid(), 'admin'::public.app_role)) WITH CHECK (bucket_id = 'review-media' AND private.has_role(auth.uid(), 'admin'::public.app_role));

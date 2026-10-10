@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Search, Package, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -266,10 +266,26 @@ function ProductCard({ product }: { product: CatalogProduct }) {
 
 function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
   const [active, setActive] = useState(0);
+  const [hovering, setHovering] = useState(false);
+
+  useEffect(() => {
+    if (!hovering || images.length < 2) return;
+    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 1800);
+    return () => clearInterval(timer);
+  }, [hovering, images.length]);
+
+  const leave = () => {
+    setHovering(false);
+    setActive(0);
+  };
+
   return (
-    <div>
+    <div
+      onMouseEnter={() => images.length > 1 && setHovering(true)}
+      onMouseLeave={leave}
+    >
       <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full p-4" aria-label={`Open ${name}`}>
-        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.02]" />
+        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain transition-opacity duration-300" />
       </Link>
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5 pb-3">

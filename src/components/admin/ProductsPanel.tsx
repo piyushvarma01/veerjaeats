@@ -163,7 +163,7 @@ function ProductList({ products, categories, mutate, onEdit }: { products: Admin
   );
 }
 
-type VariantDraft = { label: string; sku: string; mrp: string; discount: string; stock: string };
+type VariantDraft = { label: string; sku: string; mrp: string; discount: string; stock: string; cost?: string };
 const emptyVariant: VariantDraft = { label: "", sku: "", mrp: "", discount: "0", stock: "0" };
 const discountOf = (mrp: number, price: number) => (mrp > 0 ? Math.max(0, Math.round(((mrp - price) / mrp) * 100)) : 0);
 const priceFrom = (d: VariantDraft) => Math.max(0, Math.round((Number(d.mrp) || 0) * (1 - (Number(d.discount) || 0) / 100)));
@@ -207,7 +207,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
       ? await mutate({ action: "editProduct", id: product.id, ...fields })
       : await mutate({
         action: "addProduct", ...fields,
-        variants: variants.map((v, i) => ({ label: v.label.trim(), sku: v.sku.trim().length >= 2 ? v.sku.trim() : `${(f.sku.trim() || slugify(f.name).slice(0, 14)).toUpperCase()}-${i + 1}${Date.now().toString().slice(-3)}`, mrp: Number(v.mrp) || 0, discount: Number(v.discount) || 0, stock: Number(v.stock) || 0 })),
+        variants: variants.map((v, i) => ({ label: v.label.trim(), sku: v.sku.trim().length >= 2 ? v.sku.trim() : `${(f.sku.trim() || slugify(f.name).slice(0, 14)).toUpperCase()}-${i + 1}${Date.now().toString().slice(-3)}`, mrp: Number(v.mrp) || 0, discount: Number(v.discount) || 0, stock: Number(v.stock) || 0, cost: Number(v.cost) || 0 })),
         images: [...draftImages].sort((a, b) => Number(b.primary) - Number(a.primary)).map((i) => ({ imageUrl: i.url, altText: i.alt })),
       });
     setSaving(false);
@@ -339,7 +339,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
 function VariantFields({ value, onChange, idPrefix }: { value: VariantDraft; onChange: (next: VariantDraft) => void; idPrefix: string }) {
   const price = priceFrom(value); const discount = Number(value.discount) || 0;
   const input = (key: keyof VariantDraft, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
-    <div><Label htmlFor={`${idPrefix}-${key}`} className="text-xs">{label}</Label><Input id={`${idPrefix}-${key}`} value={value[key]} onChange={(e) => onChange({ ...value, [key]: e.target.value })} {...props} /></div>
+    <div><Label htmlFor={`${idPrefix}-${key}`} className="text-xs">{label}</Label><Input id={`${idPrefix}-${key}`} value={value[key] ?? ""} onChange={(e) => onChange({ ...value, [key]: e.target.value })} {...props} /></div>
   );
   return (
     <div className="grid gap-3 sm:grid-cols-3">
@@ -348,15 +348,16 @@ function VariantFields({ value, onChange, idPrefix }: { value: VariantDraft; onC
       {input("mrp", "MRP (₹)", { type: "number", min: 1 })}
       {input("discount", "Discount (%)", { type: "number", min: 0, max: 90 })}
       {input("stock", "Stock", { type: "number", min: 0 })}
+      {input("cost", "Cost price (₹)", { type: "number", min: 0, placeholder: "Your cost" })}
       <p className="self-end text-sm text-muted-foreground">Sells at <strong className="text-brown">{inr(price)}</strong>{discount > 0 && <span className="ml-1 text-gold-deep">({discount}% off)</span>}</p>
     </div>
   );
 }
 
 function VariantEditor({ variant, mutate }: { variant: AdminProduct["product_variants"][number]; mutate: Mutate }) {
-  const [d, setD] = useState<VariantDraft>({ label: variant.label, sku: variant.sku, mrp: String(variant.mrp), discount: String(discountOf(variant.mrp, variant.price)), stock: String(variant.stock) });
+  const [d, setD] = useState<VariantDraft>({ label: variant.label, sku: variant.sku, mrp: String(variant.mrp), discount: String(discountOf(variant.mrp, variant.price)), stock: String(variant.stock), cost: String(variant.cost_price ?? 0) });
   const price = priceFrom(d);
-  const save = (active: boolean) => void mutate({ action: "updateVariant", id: variant.id, price, mrp: Number(d.mrp) || 0, stock: Number(d.stock) || 0, active });
+  const save = (active: boolean) => void mutate({ action: "updateVariant", id: variant.id, price, mrp: Number(d.mrp) || 0, stock: Number(d.stock) || 0, active, cost: Number(d.cost) || 0 });
   return (
     <div className="rounded-lg border border-border bg-background p-4">
       <div className="flex items-center justify-between gap-2">
@@ -368,12 +369,13 @@ function VariantEditor({ variant, mutate }: { variant: AdminProduct["product_var
           </Confirm>
         </div>
       </div>
-      <div className="mt-3 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div><Label className="text-xs">MRP</Label><Input type="number" value={d.mrp} onChange={(e) => setD({ ...d, mrp: e.target.value })} /></div>
         <div><Label className="text-xs">Discount %</Label><Input type="number" min={0} max={90} value={d.discount} onChange={(e) => setD({ ...d, discount: e.target.value })} /></div>
         <div><Label className="text-xs">Stock</Label><Input type="number" value={d.stock} onChange={(e) => setD({ ...d, stock: e.target.value })} /></div>
+        <div><Label className="text-xs">Cost price</Label><Input type="number" min={0} value={d.cost ?? ""} onChange={(e) => setD({ ...d, cost: e.target.value })} /></div>
       </div>
-      <p className="mt-2 text-xs text-muted-foreground">Sells at <strong className="text-brown">{inr(price)}</strong></p>
+      <p className="mt-2 text-xs text-muted-foreground">Sells at <strong className="text-brown">{inr(price)}</strong>{Number(d.cost) > 0 && <> · profit <strong className={price - Number(d.cost) >= 0 ? "text-leaf" : "text-destructive"}>{inr(price - Number(d.cost))}</strong></>}</p>
       <div className="mt-3 flex gap-2">
         <Button size="sm" className="flex-1" onClick={() => save(variant.is_active)}>Save</Button>
         <Button size="sm" variant="outline" onClick={() => save(!variant.is_active)}>{variant.is_active ? "Hide" : "Show"}</Button>
@@ -389,7 +391,7 @@ function AddVariant({ productId, mutate }: { productId: string; mutate: Mutate }
     <div className="rounded-lg border border-border bg-background p-4 lg:col-span-3">
       <VariantFields idPrefix={`av-${productId}`} value={d} onChange={setD} />
       <div className="mt-3 flex gap-2">
-        <Button size="sm" onClick={async () => { const r = await mutate({ action: "addVariant", productId, label: d.label.trim(), sku: d.sku.trim(), mrp: Number(d.mrp) || 0, discount: Number(d.discount) || 0, stock: Number(d.stock) || 0 }); if (r?.ok) { setD({ ...emptyVariant }); setOpen(false); } }}>Save pack size</Button>
+        <Button size="sm" onClick={async () => { const r = await mutate({ action: "addVariant", productId, label: d.label.trim(), sku: d.sku.trim(), mrp: Number(d.mrp) || 0, discount: Number(d.discount) || 0, stock: Number(d.stock) || 0, cost: Number(d.cost) || 0 }); if (r?.ok) { setD({ ...emptyVariant }); setOpen(false); } }}>Save pack size</Button>
         <Button size="sm" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
       </div>
     </div>

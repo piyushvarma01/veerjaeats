@@ -27,13 +27,13 @@ export const createOrder = createServerFn({ method: "POST" })
     // Never trust prices from the browser: load real prices and stock.
     const ids = [...new Set(data.items.map((i) => i.sizeId))];
     const { data: variants, error: vErr } = await supabaseAdmin.from("product_variants")
-      .select("id,product_id,label,price,stock,is_active").in("id", ids);
+      .select("id,product_id,label,price,stock,is_active,cost_price").in("id", ids);
     if (vErr) throw new Error("Could not verify products");
     const items = data.items.map((item) => {
       const v = variants?.find((x) => x.id === item.sizeId && x.product_id === item.productId);
       if (!v || !v.is_active) throw new Error(`${item.name} is no longer available`);
       if (v.stock < item.quantity) throw new Error(`Only ${v.stock} left of ${item.name} (${v.label})`);
-      return { ...item, price: v.price, sizeLabel: v.label };
+      return { ...item, price: v.price, sizeLabel: v.label, unitCost: v.cost_price };
     });
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
     const orderNumber = `VE${Date.now().toString().slice(-8)}`;
@@ -48,7 +48,7 @@ export const createOrder = createServerFn({ method: "POST" })
     if (orderError || !order) throw orderError ?? new Error("Could not create order");
     const { error: itemsError } = await supabaseAdmin.from("order_items").insert(items.map((item) => ({
       order_id: order.id, product_id: item.productId, product_name: item.name, size_id: item.sizeId,
-      size_label: item.sizeLabel, price: item.price, quantity: item.quantity,
+      size_label: item.sizeLabel, price: item.price, quantity: item.quantity, unit_cost: item.unitCost,
     })));
     if (itemsError) throw itemsError;
     return { orderNumber };

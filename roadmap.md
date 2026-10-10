@@ -1,4 +1,4 @@
 # Roadmap
 
-- [x] Verify variant change swaps main product photo (works; earlier test clicks were timing artifacts)
-- [x] Auto-slide product images (catalog cards cycle while hovering, product page gallery auto-advances every 3.5s, pauses on hover/touch, resets on leave)
+- [x] Save separate photos for each variant directly from the upload area (upload pack-size selector and validated saved assignment).
+- [x] Smoothly advance variant galleries every two seconds and verify switching (browser checked catalog sliding, detail advancing, and variant reset; no runtime errors).

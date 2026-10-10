@@ -141,14 +141,13 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
 function ProductCard({ product }: { product: CatalogProduct }) {
   const { addItem, openCart, openCheckout } = useCart();
   const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
-  const [hovering, setHovering] = useState(false);
   const variant =
     product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0];
   if (!variant) return null;
   const discount = discountOf(variant);
   const all = product.images?.length ? product.images : [{ url: product.image_url ?? gheeJar, alt: product.name }];
   const mapped = [...all.filter((i) => i.variantId === variant.id), ...all.filter((i) => !i.variantId)];
-  const gallery = mapped.length ? mapped : all;
+  const gallery = mapped.length ? mapped : [{ url: product.image_url ?? gheeJar, alt: product.name }];
   const image = gallery[0]?.url ?? gheeJar;
   const outOfStock = variant.stock <= 0;
 
@@ -167,11 +166,9 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   return (
     <article
       className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm"
-      onMouseEnter={() => gallery.length > 1 && setHovering(true)}
-      onMouseLeave={() => setHovering(false)}
     >
       <div className="relative overflow-hidden bg-card">
-        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} hovering={hovering} />
+        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             {discount}% off
@@ -269,28 +266,26 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   );
 }
 
-function ProductGallery({ images, name, slug, hovering }: { images: { url: string; alt: string }[]; name: string; slug: string; hovering: boolean }) {
+function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    if (!hovering || images.length < 2) return;
-    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 1800);
+    if (images.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 2000);
     return () => clearInterval(timer);
-  }, [hovering, images.length]);
-
-  useEffect(() => {
-    if (!hovering) setActive(0);
-  }, [hovering]);
+  }, [images.length]);
 
   return (
     <div>
-      <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full p-4" aria-label={`Open ${name}`}>
-        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain" />
+      <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full overflow-hidden" aria-label={`Open ${name}`}>
+        <div className="flex h-full transition-transform duration-500 ease-in-out motion-reduce:transition-none" style={{ transform: `translateX(-${active * 100}%)` }}>
+          {images.map((image, i) => <div key={`${image.url}-${i}`} className="h-full w-full shrink-0 p-4" aria-hidden={i !== active}><img src={image.url} alt={image.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain" /></div>)}
+        </div>
       </Link>
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5 pb-3">
           {images.slice(0, 6).map((_, i) => (
-            <button key={i} type="button" onClick={() => setActive(i)} aria-label={`Show photo ${i + 1}`} className={cn("h-1.5 rounded-full transition-all", i === active ? "w-5 bg-gold-deep" : "w-1.5 bg-brown/25")} />
+            <Button key={i} type="button" variant="ghost" size="icon" onClick={() => setActive(i)} aria-label={`Show photo ${i + 1}`} aria-pressed={i === active} className="h-6 w-6 p-0"><span className={cn("h-1.5 rounded-full transition-all", i === active ? "w-5 bg-gold-deep" : "w-1.5 bg-brown/25")} /></Button>
           ))}
         </div>
       )}

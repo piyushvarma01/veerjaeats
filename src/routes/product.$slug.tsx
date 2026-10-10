@@ -80,7 +80,7 @@ function ProductPage() {
         <Header logoUrl={settings.logoUrl} />
         <main key={product.id} className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:py-10">
           <Link to="/" hash="our-ghee" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Back to products</Link>
-          <div className="mt-5 grid gap-8 lg:grid-cols-2 lg:gap-12">
+          <div className="mt-5 grid grid-cols-1 gap-8 lg:grid-cols-2 lg:gap-12">
             <VariantView product={product} avg={avg} count={list.length} />
           </div>
 
@@ -260,7 +260,7 @@ function InfoSections({ product }: { product: CatalogProduct }) {
     ["Available pack sizes", product.product_variants.map((v) => v.label).join(", ")],
   ].filter(([, v]) => v) as [string, string][];
   return (
-    <section className="mt-10 grid gap-6 lg:grid-cols-5" aria-label="Product information">
+    <section className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-5" aria-label="Product information">
       <Accordion type="multiple" defaultValue={["desc"]} className="rounded-xl border border-border bg-card px-4 lg:col-span-3 lg:self-start">
         <AccordionItem value="desc"><AccordionTrigger className="font-semibold">Product description</AccordionTrigger>
           <AccordionContent><p className="text-sm leading-7 whitespace-pre-line text-foreground/80">{product.description || product.short_description || "Details coming soon."}</p></AccordionContent></AccordionItem>
@@ -315,7 +315,7 @@ function ReviewsSection({ list, avg, onOpen }: { list: ReviewItem[]; avg: number
     <section className="mt-14 rounded-xl border border-border bg-card p-4 sm:p-6" aria-labelledby="reviews-title">
       <h2 id="reviews-title" className="font-display text-2xl font-semibold text-foreground sm:text-3xl">Customer reviews</h2>
       <p className="mt-1 text-sm text-muted-foreground">{list.length} reviews</p>
-      <div className="mt-5 grid gap-6 rounded-xl border border-border bg-background p-4 sm:grid-cols-[200px_1fr] sm:p-6">
+      <div className="mt-5 grid grid-cols-1 gap-6 rounded-xl border border-border bg-background p-4 sm:grid-cols-[200px_1fr] sm:p-6">
         <div>
           <p className="font-display text-5xl font-semibold text-foreground">{avg.toFixed(1)}</p>
           <div className="mt-1 flex gap-0.5 text-gold">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < Math.round(avg) ? "fill-current" : "opacity-30")} />)}</div>

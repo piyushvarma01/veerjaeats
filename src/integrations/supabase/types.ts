@@ -175,6 +175,7 @@ export type Database = {
           quantity: number
           size_id: string
           size_label: string
+          unit_cost: number
         }
         Insert: {
           created_at?: string
@@ -186,6 +187,7 @@ export type Database = {
           quantity: number
           size_id: string
           size_label: string
+          unit_cost?: number
         }
         Update: {
           created_at?: string
@@ -197,6 +199,7 @@ export type Database = {
           quantity?: number
           size_id?: string
           size_label?: string
+          unit_cost?: number
         }
         Relationships: [
           {
@@ -314,6 +317,7 @@ export type Database = {
       }
       product_variants: {
         Row: {
+          cost_price: number
           created_at: string
           id: string
           is_active: boolean
@@ -327,6 +331,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          cost_price?: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -340,6 +345,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          cost_price?: number
           created_at?: string
           id?: string
           is_active?: boolean
@@ -626,6 +632,7 @@ export type Database = {
         | "shipped"
         | "delivered"
         | "cancelled"
+        | "returned"
       review_status: "pending" | "approved" | "rejected"
     }
     CompositeTypes: {
@@ -763,6 +770,7 @@ export const Constants = {
         "shipped",
         "delivered",
         "cancelled",
+        "returned",
       ],
       review_status: ["pending", "approved", "rejected"],
     },

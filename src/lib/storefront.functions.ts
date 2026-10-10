@@ -94,3 +94,14 @@ export const getGalleryImages = createServerFn({ method: "GET" }).handler(async 
     return [];
   }
 });
+
+export const getSiteImages = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { data, error } = await publicClient().from("site_images").select("slot,image_url");
+    if (error) throw error;
+    return Object.fromEntries((data ?? []).map((r) => [r.slot, r.image_url])) as Record<string, string>;
+  } catch (error) {
+    console.error("Site images load failed", error);
+    return {} as Record<string, string>;
+  }
+});

@@ -1,12 +1,13 @@
 import { motion, useScroll, useTransform } from "motion/react";
 import { useRef } from "react";
 
-import farm from "@/assets/farm.jpg";
-import texture from "@/assets/ghee-texture.jpg";
-import jar from "@/assets/ghee-jar.jpg";
+import { useSiteImage } from "@/lib/site-images";
 import { Reveal, SectionHeading } from "./Reveal";
 
 export function Showcase({ images = [] }: { images?: { id: string; image_url: string; caption: string }[] }) {
+  const farm = useSiteImage("showcase-farm");
+  const texture = useSiteImage("showcase-texture");
+  const jar = useSiteImage("showcase-jar");
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);

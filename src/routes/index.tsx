@@ -3,6 +3,7 @@ import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 
 import { Toaster } from "@/components/ui/sonner";
 import { CartProvider } from "@/lib/cart-context";
+import { SiteImagesProvider } from "@/lib/site-images";
 import { Header } from "@/components/site/Header";
 import { Hero } from "@/components/site/Hero";
 import { Benefits } from "@/components/site/Benefits";
@@ -19,7 +20,7 @@ import { Footer } from "@/components/site/Footer";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { Checkout } from "@/components/site/Checkout";
 import { OrderSuccess } from "@/components/site/OrderSuccess";
-import { getApprovedReviews, getStorefrontProducts, getSiteSettings, getGalleryImages } from "@/lib/storefront.functions";
+import { getApprovedReviews, getStorefrontProducts, getSiteSettings, getGalleryImages, getSiteImages } from "@/lib/storefront.functions";
 
 const TITLE = "Veerja Eats | Premium A2 Cow Ghee, Bilona Churned";
 const DESCRIPTION =
@@ -46,6 +47,8 @@ const galleryQuery = queryOptions({
   queryFn: () => getGalleryImages(),
 });
 
+const siteImagesQuery = queryOptions({ queryKey: ["storefront-site-images"], queryFn: () => getSiteImages() });
+
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     await Promise.all([
@@ -53,6 +56,7 @@ export const Route = createFileRoute("/")({
       context.queryClient.ensureQueryData(productsQuery),
       context.queryClient.ensureQueryData(settingsQuery),
       context.queryClient.ensureQueryData(galleryQuery),
+      context.queryClient.ensureQueryData(siteImagesQuery),
     ]);
 
   },
@@ -74,7 +78,9 @@ function Index() {
   const { data: products } = useSuspenseQuery(productsQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const { data: gallery } = useSuspenseQuery(galleryQuery);
+  const { data: siteImages } = useSuspenseQuery(siteImagesQuery);
   return (
+    <SiteImagesProvider images={siteImages}>
     <CartProvider>
       <div className="min-h-screen overflow-x-hidden bg-background">
         <Header logoUrl={settings.logoUrl} />
@@ -98,5 +104,6 @@ function Index() {
         <Toaster position="bottom-right" />
       </div>
     </CartProvider>
+    </SiteImagesProvider>
   );
 }

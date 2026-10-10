@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import jar from "@/assets/ghee-jar.jpg";
+import { useSiteImage } from "@/lib/site-images";
 import { Reveal } from "./Reveal";
 
 export function FinalCta() {
+  const jar = useSiteImage("final-cta");
   return (
     <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
       <Reveal>

@@ -20,6 +20,7 @@ import { ProductsPanel } from "@/components/admin/ProductsPanel";
 import { CategoriesPanel } from "@/components/admin/CategoriesPanel";
 import { BillsPanel } from "@/components/admin/BillsPanel";
 import { GalleryPanel } from "@/components/admin/GalleryPanel";
+import { WebsiteImagesPanel } from "@/components/admin/WebsiteImagesPanel";
 import { ReportsPanel, SalesSparkChart } from "@/components/admin/ReportsPanel";
 import { ComingSoon, type Mutate } from "@/components/admin/shared";
 
@@ -95,7 +96,7 @@ function AdminContent({ section, data, search, setSearch, mutate, run, busy }: {
   if (section === "bills") return <BillsPanel orders={orders} />;
   if (section === "gallery") return <GalleryPanel />;
   if (section === "reports") return <ReportsPanel orders={data.orders} products={data.products} />;
-  if (section === "website-images") return <ComingSoon title="Website Images" />;
+  if (section === "website-images") return <WebsiteImagesPanel />;
   if (section === "settings") return <ComingSoon title="Settings" />;
   if (section === "orders") { const filtered = orders.filter((o) => `${o.order_number} ${o.customers?.full_name ?? ""} ${o.customers?.mobile ?? ""}`.toLowerCase().includes(search.toLowerCase())); return <section className="bg-card p-5 shadow-warm"><SectionTitle title="Orders" subtitle="Track, search, and fulfil customer orders" search={search} setSearch={setSearch} /><OrdersTable orders={filtered} mutate={mutate} busy={busy} /></section>; }
   if (section === "products") return <ProductsPanel products={data.products} categories={data.categories} mutate={run} />;

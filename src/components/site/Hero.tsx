@@ -2,9 +2,10 @@ import { motion } from "motion/react";
 import { Leaf, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import gheeJar from "@/assets/ghee-jar.jpg";
+import { useSiteImage } from "@/lib/site-images";
 
 export function Hero() {
+  const gheeJar = useSiteImage("hero");
   return (
     <section id="home" className="relative overflow-hidden">
       <div className="pointer-events-none absolute -top-32 -left-24 h-96 w-96 rounded-full bg-gold/25 blur-3xl" />

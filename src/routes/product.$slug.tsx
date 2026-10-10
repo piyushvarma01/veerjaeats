@@ -16,6 +16,9 @@ import { CartDrawer } from "@/components/site/CartDrawer";
 import { Checkout } from "@/components/site/Checkout";
 import { OrderSuccess } from "@/components/site/OrderSuccess";
 import type { CatalogProduct } from "@/components/site/ProductCatalog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { getProductReviews } from "@/lib/reviews.functions";
+import { useQuery } from "@tanstack/react-query";
 import { getApprovedReviews, getSiteSettings, getStorefrontProducts } from "@/lib/storefront.functions";
 
 const productsQuery = queryOptions({ queryKey: ["storefront-products"], queryFn: () => getStorefrontProducts() });
@@ -63,7 +66,10 @@ function ProductPage() {
   const sameCat = products.filter((p) => p.id !== product.id && p.category?.slug && p.category.slug === product.category?.slug);
   const others = products.filter((p) => p.id !== product.id && !sameCat.includes(p));
   const recommended = [...sameCat, ...others].slice(0, 4) as CatalogProduct[];
-  const list = reviews.length ? reviews.map((r) => ({ id: r.id, name: r.customer_name, city: r.city, rating: r.rating, review: r.review }))
+  const own = useQuery({ queryKey: ["product-reviews", product?.id], queryFn: () => getProductReviews({ data: { productId: product!.id } }), enabled: Boolean(product) });
+  const [open, setOpen] = useState<{ kind: "photo" | "video"; url: string } | null>(null);
+  type R = { id: string; name: string; city: string; rating: number; review: string; verified?: boolean; media?: { id: string; kind: "photo" | "video"; url: string }[] };
+  const list: R[] = own.data?.length ? own.data : reviews.length ? reviews.map((r) => ({ id: r.id, name: r.customer_name, city: r.city, rating: r.rating, review: r.review }))
     : TESTIMONIALS.map((t, i) => ({ id: String(i), name: t.name, city: t.city, rating: t.rating, review: t.review }));
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 5;
 
@@ -87,11 +93,28 @@ function ProductPage() {
                 <article key={r.id} className="rounded-lg border border-border bg-card p-5">
                   <div className="flex gap-0.5 text-gold">{Array.from({ length: 5 }).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < r.rating ? "fill-current" : "opacity-30")} />)}</div>
                   <p className="mt-3 text-sm leading-6 text-foreground/85">{r.review}</p>
-                  <p className="mt-4 text-sm font-semibold text-foreground">{r.name}{r.city && <span className="font-normal text-muted-foreground"> · {r.city}</span>}</p>
+                  {r.media && r.media.length > 0 && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {r.media.map((m) => (
+                        <button key={m.id} type="button" onClick={() => setOpen(m)} aria-label={m.kind === "photo" ? "Open review photo" : "Play review video"} className="h-16 w-16 overflow-hidden rounded-md border border-border bg-secondary">
+                          {m.kind === "photo" ? <img src={m.url} alt="Customer photo" loading="lazy" className="h-full w-full object-cover" /> : <video src={m.url} muted preload="metadata" className="h-full w-full object-cover" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <p className="mt-4 text-sm font-semibold text-foreground">{r.name}{r.city && <span className="font-normal text-muted-foreground"> · {r.city}</span>}{r.verified && <span className="ml-2 rounded bg-leaf/12 px-1.5 py-0.5 text-[10px] font-semibold text-leaf uppercase">Verified buyer</span>}</p>
                 </article>
               ))}
             </div>
           </section>
+
+          <Dialog open={Boolean(open)} onOpenChange={(o) => !o && setOpen(null)}>
+            <DialogContent className="max-w-3xl p-2">
+              <DialogTitle className="sr-only">Customer review media</DialogTitle>
+              {open?.kind === "photo" && <img src={open.url} alt="Customer photo" className="mx-auto max-h-[80vh] object-contain" />}
+              {open?.kind === "video" && <video src={open.url} controls autoPlay className="mx-auto max-h-[80vh] w-full" />}
+            </DialogContent>
+          </Dialog>
 
           {recommended.length > 0 && (
             <section className="mt-16" aria-labelledby="rec-title">

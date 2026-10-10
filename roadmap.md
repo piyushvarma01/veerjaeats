@@ -5,5 +5,5 @@
 - [x] Admin gallery manager (view all, upload, remove).
 - [x] Customer accounts + reviews after purchase with photo/video; admin full delete.
 - [x] Sales & returns chart; profit & loss chart (cost price per pack size).
-- [ ] Manage all website images (edit/remove/upload).
+- [x] Manage all website images (edit/remove/upload).
 - [ ] Settings section with main features + privacy system; move Sign out into Settings.

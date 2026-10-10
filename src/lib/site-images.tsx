@@ -11,7 +11,6 @@ export const SITE_IMAGE_SLOTS = [
   { slot: "showcase-texture", label: "Gallery — texture photo", section: "The Veerja World", fallback: texture },
   { slot: "showcase-jar", label: "Gallery — kitchen photo", section: "The Veerja World", fallback: jar },
   { slot: "final-cta", label: "Bottom banner", section: "Home — bottom", fallback: jar },
-  { slot: "product-placeholder", label: "Product placeholder", section: "Products without photos", fallback: jar },
 ] as const;
 
 export type SiteImageSlot = (typeof SITE_IMAGE_SLOTS)[number]["slot"];

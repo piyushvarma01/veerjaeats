@@ -19,7 +19,7 @@ import { Footer } from "@/components/site/Footer";
 import { CartDrawer } from "@/components/site/CartDrawer";
 import { Checkout } from "@/components/site/Checkout";
 import { OrderSuccess } from "@/components/site/OrderSuccess";
-import { getApprovedReviews, getStorefrontProducts, getSiteSettings } from "@/lib/storefront.functions";
+import { getApprovedReviews, getStorefrontProducts, getSiteSettings, getGalleryImages } from "@/lib/storefront.functions";
 
 const TITLE = "Veerja Eats | Premium A2 Cow Ghee, Bilona Churned";
 const DESCRIPTION =
@@ -41,12 +41,18 @@ const settingsQuery = queryOptions({
 });
 
 
+const galleryQuery = queryOptions({
+  queryKey: ["storefront-gallery"],
+  queryFn: () => getGalleryImages(),
+});
+
 export const Route = createFileRoute("/")({
   loader: async ({ context }) => {
     await Promise.all([
       context.queryClient.ensureQueryData(reviewsQuery),
       context.queryClient.ensureQueryData(productsQuery),
       context.queryClient.ensureQueryData(settingsQuery),
+      context.queryClient.ensureQueryData(galleryQuery),
     ]);
 
   },
@@ -67,6 +73,7 @@ function Index() {
   const { data: reviews } = useSuspenseQuery(reviewsQuery);
   const { data: products } = useSuspenseQuery(productsQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
+  const { data: gallery } = useSuspenseQuery(galleryQuery);
   return (
     <CartProvider>
       <div className="min-h-screen overflow-x-hidden bg-background">
@@ -78,7 +85,7 @@ function Index() {
           {products.length > 0 ? <ProductCatalog products={products} /> : <ProductSection />}
           <WhyUs />
           <Process />
-          <Showcase />
+          <Showcase images={gallery} />
           <Testimonials reviews={reviews} />
           <FaqSection />
           <FinalCta />

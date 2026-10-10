@@ -19,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { ProductsPanel } from "@/components/admin/ProductsPanel";
 import { CategoriesPanel } from "@/components/admin/CategoriesPanel";
 import { BillsPanel } from "@/components/admin/BillsPanel";
+import { GalleryPanel } from "@/components/admin/GalleryPanel";
 import { ComingSoon, type Mutate } from "@/components/admin/shared";
 
 type Section = "dashboard" | "products" | "categories" | "messages" | "reels" | "gallery" | "branding" | "website-images" | "orders" | "bills" | "customers" | "settings";
@@ -91,7 +92,7 @@ function AdminContent({ section, data, search, setSearch, mutate, run, busy }: {
   if (section === "dashboard") return <Dashboard data={data} revenue={revenue} mutate={mutate} busy={busy} />;
   if (section === "categories") return <CategoriesPanel categories={data.categories} products={data.products} mutate={run} />;
   if (section === "bills") return <BillsPanel orders={orders} />;
-  if (section === "gallery") return <ComingSoon title="Gallery" />;
+  if (section === "gallery") return <GalleryPanel />;
   if (section === "website-images") return <ComingSoon title="Website Images" />;
   if (section === "settings") return <ComingSoon title="Settings" />;
   if (section === "orders") { const filtered = orders.filter((o) => `${o.order_number} ${o.customers?.full_name ?? ""} ${o.customers?.mobile ?? ""}`.toLowerCase().includes(search.toLowerCase())); return <section className="bg-card p-5 shadow-warm"><SectionTitle title="Orders" subtitle="Track, search, and fulfil customer orders" search={search} setSearch={setSearch} /><OrdersTable orders={filtered} mutate={mutate} busy={busy} /></section>; }

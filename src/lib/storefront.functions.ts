@@ -77,3 +77,20 @@ export const getSiteSettings = createServerFn({ method: "GET" }).handler(async (
     return { logoUrl: null };
   }
 });
+
+export const getGalleryImages = createServerFn({ method: "GET" }).handler(async () => {
+  try {
+    const { data, error } = await publicClient()
+      .from("gallery_images")
+      .select("id,image_url,caption")
+      .eq("is_published", true)
+      .order("sort_order")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    return data ?? [];
+  } catch (error) {
+    console.error("Gallery load failed", error);
+    return [];
+  }
+});

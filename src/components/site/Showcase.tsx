@@ -6,10 +6,28 @@ import texture from "@/assets/ghee-texture.jpg";
 import jar from "@/assets/ghee-jar.jpg";
 import { Reveal, SectionHeading } from "./Reveal";
 
-export function Showcase() {
+export function Showcase({ images = [] }: { images?: { id: string; image_url: string; caption: string }[] }) {
   const ref = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+
+  if (images.length > 0) {
+    return (
+      <section id="gallery" className="bg-beige/60 py-16 lg:py-24">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <SectionHeading eyebrow="The Veerja World" title="Our Gallery" />
+          <div className="mt-12 columns-2 gap-4 md:columns-3 [&>*]:mb-4">
+            {images.map((img) => (
+              <figure key={img.id} className="group relative break-inside-avoid overflow-hidden rounded-2xl border border-border shadow-warm">
+                <img src={img.image_url} alt={img.caption || "Veerja Eats gallery photo"} loading="lazy" className="w-full transition-transform duration-700 group-hover:scale-105" />
+                {img.caption && <figcaption className="absolute bottom-0 w-full bg-gradient-to-t from-brown/80 to-transparent p-4 font-display text-lg text-primary-foreground">{img.caption}</figcaption>}
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="bg-beige/60 py-16 lg:py-24">

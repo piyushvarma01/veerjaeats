@@ -45,7 +45,7 @@ export function ProductSection() {
               loading="lazy"
               width={1024}
               height={1024}
-              className="h-full max-h-[560px] w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              className="aspect-square h-full w-full object-contain transition-transform duration-700 group-hover:scale-105"
             />
             <span className="absolute top-4 left-4 rounded-full bg-card/90 px-3 py-1 text-xs font-medium text-gold-deep shadow-sm backdrop-blur">
               Bestseller
@@ -142,12 +142,12 @@ export function ProductSection() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
+                variant="purchase"
                 onClick={() => {
                   add();
                   openCheckout();
                 }}
-                className="flex-1 border-brown/25 bg-brown text-primary-foreground hover:bg-brown/90"
+                className="flex-1"
               >
                 Buy Now
               </Button>

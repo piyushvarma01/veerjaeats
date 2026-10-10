@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { LockKeyhole, Menu, ShoppingBag, X } from "lucide-react";
+import { Menu, Moon, ShoppingBag, Sun, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,21 @@ export function Header({ logoUrl }: { logoUrl?: string | null }) {
 
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("veerja-theme");
+    const enabled = saved === "dark";
+    setDark(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+  }, []);
+
+  const toggleTheme = () => {
+    const enabled = !dark;
+    setDark(enabled);
+    document.documentElement.classList.toggle("dark", enabled);
+    localStorage.setItem("veerja-theme", enabled ? "dark" : "light");
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -72,10 +87,18 @@ export function Header({ logoUrl }: { logoUrl?: string | null }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5">
-          <Button asChild size="icon" variant="ghost" className="hidden text-brown sm:inline-flex" title="Admin sign in">
-            <a href="/auth" aria-label="Admin sign in"><LockKeyhole className="h-4 w-4" /></a>
+          <Button size="icon" variant="ghost" onClick={toggleTheme}
+            aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+            title={dark ? "Switch to light mode" : "Switch to dark mode"}
+            className="relative h-10 w-16 rounded-full border border-border bg-secondary text-foreground">
+            <Sun className="absolute left-2 h-4 w-4" />
+            <Moon className="absolute right-2 h-4 w-4" />
+            <span className={cn("absolute top-1 h-8 w-8 rounded-full bg-card shadow-sm transition-transform motion-reduce:transition-none", dark ? "translate-x-3" : "-translate-x-3")}>
+              {dark ? <Moon className="m-2 h-4 w-4" /> : <Sun className="m-2 h-4 w-4" />}
+            </span>
           </Button>
-          <button
+          <Button
+            variant="ghost"
             onClick={openCart}
             aria-label={`Open cart, ${count} items`}
             className="relative grid h-11 w-11 place-items-center rounded-full border border-border bg-card text-brown transition-all hover:border-gold hover:shadow-warm"
@@ -94,20 +117,21 @@ export function Header({ logoUrl }: { logoUrl?: string | null }) {
                 </motion.span>
               )}
             </AnimatePresence>
-          </button>
+          </Button>
           <Button
             asChild
             className="hidden bg-gradient-to-r from-gold to-gold-deep text-primary-foreground shadow-warm hover:opacity-95 sm:inline-flex"
           >
             <a href="#our-ghee">Shop Now</a>
           </Button>
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setOpen((v) => !v)}
             aria-label="Toggle menu"
             className="grid h-11 w-11 place-items-center rounded-full border border-border bg-card text-brown lg:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          </Button>
         </div>
       </div>
 

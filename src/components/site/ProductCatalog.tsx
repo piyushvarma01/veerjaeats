@@ -29,6 +29,8 @@ export type CatalogProduct = {
   is_new_arrival?: boolean;
   is_featured?: boolean;
   short_description?: string;
+  weight?: string;
+  tags?: string[];
   images?: { url: string; alt: string; variantId?: string | null }[];
   category?: { name: string; slug: string; sort_order: number } | null;
   product_variants: Variant[];

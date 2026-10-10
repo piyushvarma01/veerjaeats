@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { FolderTree, Images, Image as ImageIcon, Settings, Star, BarChart3, Boxes, Check, ChevronRight, CircleDollarSign, Clock3, Film, ImagePlus, Inbox, LayoutDashboard, Loader2, LogOut, Menu, MessageSquareQuote, PackageCheck, Pencil, Plus, Save, Search, ShoppingBag, Trash2, Upload, Users, X } from "lucide-react";
+import { FolderTree, Images, Image as ImageIcon, Settings, Star, BarChart3, Boxes, Check, ChevronRight, CircleDollarSign, Clock3, Film, ImagePlus, Inbox, LayoutDashboard, Loader2, LogOut, Menu, MessageSquareQuote, PackageCheck, Pencil, Plus, Save, Search, ShoppingBag, Trash2, Upload, Users, X, Receipt } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -17,15 +17,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 import { ProductsPanel } from "@/components/admin/ProductsPanel";
 import { CategoriesPanel } from "@/components/admin/CategoriesPanel";
+import { BillsPanel } from "@/components/admin/BillsPanel";
 import { ComingSoon, type Mutate } from "@/components/admin/shared";
 
-type Section = "dashboard" | "products" | "categories" | "messages" | "reels" | "gallery" | "branding" | "website-images" | "orders" | "customers" | "settings";
+type Section = "dashboard" | "products" | "categories" | "messages" | "reels" | "gallery" | "branding" | "website-images" | "orders" | "bills" | "customers" | "settings";
 const NAV: { id: Section; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard }, { id: "products", label: "Products", icon: Boxes },
   { id: "categories", label: "Categories", icon: FolderTree }, { id: "messages", label: "Reviews / Messages", icon: MessageSquareQuote },
   { id: "reels", label: "Reels", icon: Film }, { id: "gallery", label: "Gallery", icon: Images },
   { id: "branding", label: "Logo / Branding", icon: ImagePlus }, { id: "website-images", label: "Website Images", icon: ImageIcon },
-  { id: "orders", label: "Orders", icon: ShoppingBag }, { id: "customers", label: "Customers", icon: Users },
+  { id: "orders", label: "Orders", icon: ShoppingBag }, { id: "bills", label: "Bills & Labels", icon: Receipt }, { id: "customers", label: "Customers", icon: Users },
   { id: "settings", label: "Settings", icon: Settings },
 ];
 
@@ -76,6 +77,7 @@ function AdminContent({ section, data, search, setSearch, mutate, run, busy }: {
   const orders = data.orders; const revenue = orders.filter((o) => o.status !== "cancelled").reduce((sum, o) => sum + o.total, 0);
   if (section === "dashboard") return <Dashboard data={data} revenue={revenue} mutate={mutate} busy={busy} />;
   if (section === "categories") return <CategoriesPanel categories={data.categories} products={data.products} mutate={run} />;
+  if (section === "bills") return <BillsPanel orders={orders} />;
   if (section === "gallery") return <ComingSoon title="Gallery" />;
   if (section === "website-images") return <ComingSoon title="Website Images" />;
   if (section === "settings") return <ComingSoon title="Settings" />;

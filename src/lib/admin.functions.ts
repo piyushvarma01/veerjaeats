@@ -87,6 +87,7 @@ const variantInput = z.object({
   mrp: z.number().int().min(1),
   discount: z.number().min(0).max(90),
   stock: z.number().int().min(0),
+  cost: z.number().int().min(0).default(0),
 });
 
 const productImageUrl = z
@@ -135,7 +136,7 @@ const categoryFields = {
 };
 
 export const mutationSchema = z.discriminatedUnion("action", [
-  z.object({ action: z.literal("orderStatus"), id: z.string().uuid(), value: z.enum(["new", "confirmed", "packed", "shipped", "delivered", "cancelled"]) }),
+  z.object({ action: z.literal("orderStatus"), id: z.string().uuid(), value: z.enum(["new", "confirmed", "packed", "shipped", "delivered", "cancelled", "returned"]) }),
   z.object({ action: z.literal("reviewStatus"), id: z.string().uuid(), value: z.enum(["pending", "approved", "rejected"]) }),
   z.object({ action: z.literal("updateReview"), id: z.string().uuid(), customerName: z.string().trim().min(2).max(100), city: z.string().trim().max(100), rating: z.number().int().min(1).max(5), review: z.string().trim().min(2).max(2000), status: z.enum(["pending", "approved", "rejected"]) }),
   z.object({ action: z.literal("deleteReview"), id: z.string().uuid() }),
@@ -144,7 +145,7 @@ export const mutationSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("productFlags"), id: z.string().uuid(), featured: z.boolean(), bestseller: z.boolean(), newArrival: z.boolean() }),
   z.object({ action: z.literal("duplicateProduct"), id: z.string().uuid() }),
   z.object({ action: z.literal("reorderProducts"), ids: z.array(z.string().uuid()).max(200) }),
-  z.object({ action: z.literal("updateVariant"), id: z.string().uuid(), price: z.number().int().min(0), mrp: z.number().int().min(0), stock: z.number().int().min(0), active: z.boolean() }),
+  z.object({ action: z.literal("updateVariant"), id: z.string().uuid(), price: z.number().int().min(0), mrp: z.number().int().min(0), stock: z.number().int().min(0), active: z.boolean(), cost: z.number().int().min(0).optional() }),
   z.object({ action: z.literal("addReel"), title: z.string().min(2).max(120), mediaUrl: z.string().url(), caption: z.string().max(500), published: z.boolean() }),
   z.object({ action: z.literal("toggleReel"), id: z.string().uuid(), value: z.boolean() }),
   z.object({ action: z.literal("deleteReel"), id: z.string().uuid() }),
@@ -275,7 +276,7 @@ export const mutateAdminData = createServerFn({ method: "POST" })
       result = { error: null };
     } else if (data.action === "updateVariant") {
       if (data.mrp < data.price) throw new Error("List price must be at least the selling price");
-      result = await db.from("product_variants").update({ price: data.price, mrp: data.mrp, stock: data.stock, is_active: data.active }).eq("id", data.id);
+      result = await db.from("product_variants").update({ price: data.price, mrp: data.mrp, stock: data.stock, is_active: data.active, ...(data.cost !== undefined ? { cost_price: data.cost } : {}) }).eq("id", data.id);
     } else if (data.action === "addReel") result = await db.from("reels").insert({ title: data.title, media_url: data.mediaUrl, caption: data.caption, is_published: data.published });
     else if (data.action === "toggleReel") result = await db.from("reels").update({ is_published: data.value }).eq("id", data.id);
     else if (data.action === "deleteReel") result = await db.from("reels").delete().eq("id", data.id);
@@ -284,7 +285,7 @@ export const mutateAdminData = createServerFn({ method: "POST" })
       if (error) throw error;
       result = await db.from("product_variants").insert(data.variants.map((variant, index) => ({
         product_id: created.id, sku: variant.sku, label: variant.label, mrp: variant.mrp,
-        price: sellingPrice(variant.mrp, variant.discount), stock: variant.stock, sort_order: index,
+        price: sellingPrice(variant.mrp, variant.discount), stock: variant.stock, sort_order: index, cost_price: variant.cost,
       })));
       if (result.error) {
         await db.from("products").delete().eq("id", created.id);
@@ -301,7 +302,7 @@ export const mutateAdminData = createServerFn({ method: "POST" })
     } else if (data.action === "addVariant") {
       result = await db.from("product_variants").insert({
         product_id: data.productId, sku: data.sku, label: data.label, mrp: data.mrp,
-        price: sellingPrice(data.mrp, data.discount), stock: data.stock,
+        price: sellingPrice(data.mrp, data.discount), stock: data.stock, cost_price: data.cost,
       });
     } else if (data.action === "deleteVariant") result = await db.from("product_variants").delete().eq("id", data.id);
     else if (data.action === "addProductImages") {

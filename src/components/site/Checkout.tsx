@@ -13,18 +13,20 @@ import { createOrder } from "@/lib/orders.functions";
 import { inr } from "@/lib/shop-data";
 
 const FIELDS = [
-  { id: "fullName", label: "Full Name", type: "text", placeholder: "Your name", required: true },
+  { id: "fullName", label: "Full Name", type: "text", placeholder: "Your name", required: true, maxLength: 100 },
   {
     id: "mobile",
     label: "Mobile Number",
     type: "tel",
     placeholder: "10-digit mobile number",
     required: true,
+    pattern: "[6-9][0-9]{9}",
+    maxLength: 10,
   },
   { id: "email", label: "Email", type: "email", placeholder: "you@email.com", required: true },
   { id: "city", label: "City", type: "text", placeholder: "City", required: true },
   { id: "state", label: "State", type: "text", placeholder: "State", required: true },
-  { id: "pin", label: "PIN Code", type: "text", placeholder: "6-digit PIN", required: true },
+  { id: "pin", label: "PIN Code", type: "text", placeholder: "6-digit PIN", required: true, pattern: "[0-9]{6}", maxLength: 6 },
 ] as const;
 
 export function Checkout() {
@@ -66,6 +68,10 @@ export function Checkout() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Checkout"
+          onKeyDown={(e) => e.key === "Escape" && closeCheckout()}
           className="fixed inset-0 z-80 flex items-start justify-center overflow-y-auto bg-brown/50 p-3 backdrop-blur-sm sm:p-6"
         >
           <motion.div
@@ -80,6 +86,7 @@ export function Checkout() {
                 Checkout
               </h2>
               <button
+                type="button"
                 onClick={closeCheckout}
                 aria-label="Close checkout"
                 className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-border text-brown hover:bg-secondary"
@@ -105,6 +112,8 @@ export function Checkout() {
                         type={f.type}
                         required={f.required}
                         placeholder={f.placeholder}
+                        pattern={"pattern" in f ? f.pattern : undefined}
+                        maxLength={"maxLength" in f ? f.maxLength : 120}
                         className="mt-1.5 bg-card"
                       />
                     </div>
@@ -118,6 +127,7 @@ export function Checkout() {
                       name="address"
                       required
                       rows={3}
+                      maxLength={300}
                       placeholder="House / street / landmark"
                       className="mt-1.5 bg-card"
                     />

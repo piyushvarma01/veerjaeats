@@ -183,7 +183,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
   const [saving, setSaving] = useState(false);
 
   const liveImages: ManagedImage[] = product
-    ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((i) => ({ id: i.id, url: i.image_url, alt: i.alt_text, primary: i.is_primary }))
+    ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((i) => ({ id: i.id, url: i.image_url, alt: i.alt_text, primary: i.is_primary, variantId: i.variant_id }))
     : draftImages;
   const primaryUrl = liveImages.find((i) => i.primary)?.url ?? liveImages[0]?.url ?? "";
 
@@ -298,7 +298,10 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
         </TabsContent>
 
         <TabsContent value="images" className="mt-6">
-          <ImageManager images={liveImages} {...imageHandlers} />
+          <ImageManager images={liveImages} {...imageHandlers}
+            variants={product?.product_variants.map((v) => ({ id: v.id, label: v.label }))}
+            onVariant={product ? (id, variantId) => void mutate({ action: "setImageVariant", id, variantId }) : undefined} />
+          {product && <p className="mt-3 text-xs text-muted-foreground">Tip: link a photo to a pack size so customers see the right jar when they pick that size. Shared photos show for every size.</p>}
           {!product && <p className="mt-3 text-xs text-muted-foreground">Photos are saved with the product when you click Save draft or Publish.</p>}
         </TabsContent>
 

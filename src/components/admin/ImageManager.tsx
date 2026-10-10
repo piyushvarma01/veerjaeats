@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export type ManagedImage = { id: string; url: string; alt: string; primary: boolean };
+export type ManagedImage = { id: string; url: string; alt: string; primary: boolean; variantId?: string | null };
 
 type Props = {
   images: ManagedImage[];
@@ -16,9 +16,11 @@ type Props = {
   onDelete: (id: string) => void;
   onAlt: (id: string, alt: string) => void;
   onReplace: (id: string, file: File) => Promise<void>;
+  variants?: { id: string; label: string }[];
+  onVariant?: (id: string, variantId: string | null) => void;
 };
 
-export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete, onAlt, onReplace }: Props) {
+export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete, onAlt, onReplace, variants, onVariant }: Props) {
   const [uploading, setUploading] = useState(false);
   const [over, setOver] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
@@ -91,6 +93,13 @@ export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete,
               </div>
               <div className="space-y-2 p-3">
                 <Input defaultValue={image.alt} placeholder="Describe this photo" onBlur={(e) => { if (e.target.value !== image.alt) onAlt(image.id, e.target.value); }} />
+                {variants && onVariant && variants.length > 0 && (
+                  <select aria-label="Pack size for this photo" value={image.variantId ?? ""} onChange={(e) => onVariant(image.id, e.target.value || null)}
+                    className="h-9 w-full rounded-md border border-input bg-background px-2 text-sm">
+                    <option value="">All pack sizes (shared)</option>
+                    {variants.map((v) => <option key={v.id} value={v.id}>Only {v.label}</option>)}
+                  </select>
+                )}
                 <div className="flex flex-wrap items-center gap-1">
                   <Button type="button" size="icon" variant="ghost" aria-label="Move earlier" disabled={index === 0} onClick={() => move(index, index - 1)}><ArrowUp /></Button>
                   <Button type="button" size="icon" variant="ghost" aria-label="Move later" disabled={index === images.length - 1} onClick={() => move(index, index + 1)}><ArrowDown /></Button>

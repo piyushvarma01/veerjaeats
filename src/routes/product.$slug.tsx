@@ -74,8 +74,7 @@ function ProductPage() {
         <main key={product.id} className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
           <Link to="/" hash="our-ghee" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" /> Back to products</Link>
           <div className="mt-6 grid gap-8 lg:grid-cols-2 lg:gap-12">
-            <Gallery product={product} />
-            <Details product={product} avg={avg} count={list.length} />
+            <VariantView product={product} avg={avg} count={list.length} />
           </div>
 
           <section className="mt-16" aria-labelledby="reviews-title">
@@ -113,12 +112,30 @@ function ProductPage() {
   );
 }
 
+type Img = { url: string; alt: string; variantId?: string | null };
+function imagesFor(product: CatalogProduct, variantId: string) {
+  const all = imagesOf(product) as Img[];
+  const own = all.filter((i) => i.variantId === variantId);
+  const shared = all.filter((i) => !i.variantId);
+  const list = [...own, ...shared];
+  return list.length ? list : all;
+}
+
 function imagesOf(product: CatalogProduct) {
   return product.images?.length ? product.images : [{ url: product.image_url ?? gheeJar, alt: product.name }];
 }
 
-function Gallery({ product }: { product: CatalogProduct }) {
-  const images = imagesOf(product);
+function VariantView({ product, avg, count }: { product: CatalogProduct; avg: number; count: number }) {
+  const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
+  return (
+    <>
+      <Gallery key={variantId} product={product} images={imagesFor(product, variantId)} />
+      <Details product={product} avg={avg} count={count} variantId={variantId} setVariantId={setVariantId} />
+    </>
+  );
+}
+
+function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }) {
   const [active, setActive] = useState(0);
   const track = useRef<HTMLDivElement>(null);
   const go = (i: number) => {
@@ -152,14 +169,13 @@ function Gallery({ product }: { product: CatalogProduct }) {
   );
 }
 
-function Details({ product, avg, count }: { product: CatalogProduct; avg: number; count: number }) {
+function Details({ product, avg, count, variantId, setVariantId }: { product: CatalogProduct; avg: number; count: number; variantId: string; setVariantId: (id: string) => void }) {
   const { addItem, openCart, openCheckout } = useCart();
-  const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
   const variant = product.product_variants.find((v) => v.id === variantId) ?? product.product_variants[0];
   if (!variant) return null;
   const out = variant.stock <= 0;
   const discount = variant.mrp > variant.price ? Math.round(((variant.mrp - variant.price) / variant.mrp) * 100) : 0;
-  const add = () => addItem({ productId: product.id, name: product.name, sizeId: variant.id, sizeLabel: variant.label, price: variant.price, quantity: 1, image: imagesOf(product)[0]?.url ?? gheeJar });
+  const add = () => addItem({ productId: product.id, name: product.name, sizeId: variant.id, sizeLabel: variant.label, price: variant.price, quantity: 1, image: imagesFor(product, variant.id)[0]?.url ?? gheeJar });
   return (
     <div>
       {product.category && <p className="text-xs font-semibold tracking-wide text-gold-deep uppercase">{product.category.name}</p>}
@@ -178,7 +194,7 @@ function Details({ product, avg, count }: { product: CatalogProduct; avg: number
         <p className="text-sm font-medium text-foreground">Pack size</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {product.product_variants.map((v) => (
-            <Button key={v.id} variant="outline" size="sm" onClick={() => setVariantId(v.id)}
+            <Button key={v.id} variant="outline" size="sm" aria-pressed={v.id === variant.id} onClick={() => setVariantId(v.id)}
               className={cn(v.id === variant.id ? "border-gold bg-gold/12 text-foreground" : "text-foreground/70")}>{v.label}</Button>
           ))}
         </div>

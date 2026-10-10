@@ -149,7 +149,7 @@ function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }
   };
 
   return (
-    <div className="flex flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
+    <div className="flex min-w-0 flex-col gap-3 lg:sticky lg:top-24 lg:self-start">
       <div className="relative min-w-0 overflow-hidden rounded-2xl border border-gold/30 bg-[radial-gradient(circle_at_50%_40%,var(--color-card)_0%,var(--color-secondary)_100%)] shadow-warm">
         <div ref={track} onScroll={(e) => { const el = e.currentTarget; const i = Math.round(el.scrollLeft / el.clientWidth); if (i !== active) setActive(i); }}
           className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -188,7 +188,7 @@ function Details({ product, avg, count, variantId, setVariantId }: { product: Ca
   const discount = pct(variant);
   const add = () => addItem({ productId: product.id, name: product.name, sizeId: variant.id, sizeLabel: variant.label, price: variant.price, quantity, image: imagesFor(product, variant.id)[0]?.url ?? gheeJar });
   return (
-    <div>
+    <div className="min-w-0">
       {product.category && <p className="text-xs font-semibold tracking-wide text-gold-deep uppercase">{product.category.name}</p>}
       <h1 className="mt-1.5 font-display text-2xl font-semibold text-foreground sm:text-4xl">{product.name}</h1>
       <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">

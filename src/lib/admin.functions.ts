@@ -215,6 +215,7 @@ export const mutateAdminData = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => mutationSchema.parse(input))
   .handler(async ({ context, data }) => {
+    try {
     const db = await getAdminClientFor(context.userId);
     let result;
     let createdId: string | null = null;
@@ -389,4 +390,10 @@ export const mutateAdminData = createServerFn({ method: "POST" })
 
     if (result.error) throw result.error;
     return { ok: true, id: createdId };
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      const e = err as { message?: string; code?: string } | null;
+      if (e?.code === "23505") throw new Error("duplicate key: that web address or SKU is already in use");
+      throw new Error(e?.message || "Could not save changes");
+    }
   });

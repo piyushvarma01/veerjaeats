@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ArrowDown, ArrowLeft, ArrowUp, Copy, Eye, Loader2, Pencil, Plus, Search, Star, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -181,6 +182,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
   const [variants, setVariants] = useState<VariantDraft[]>([{ ...emptyVariant }]);
   const [draftImages, setDraftImages] = useState<ManagedImage[]>([]);
   const [saving, setSaving] = useState(false);
+  const [tab, setTab] = useState("basic");
 
   const liveImages: ManagedImage[] = product
     ? [...product.product_images].sort((a, b) => a.sort_order - b.sort_order).map((i) => ({ id: i.id, url: i.image_url, alt: i.alt_text, primary: i.is_primary, variantId: i.variant_id }))
@@ -188,7 +190,11 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
   const primaryUrl = liveImages.find((i) => i.primary)?.url ?? liveImages[0]?.url ?? "";
 
   const save = async (active: boolean) => {
-    if (f.name.trim().length < 2) { alert("Please enter a product name"); return; }
+    if (f.name.trim().length < 2) { setTab("basic"); toast.error("Please enter a product name (at least 2 letters)"); return; }
+    if (!product) {
+      const bad = variants.findIndex((v) => !v.label.trim() || !(Number(v.mrp) >= 1));
+      if (bad >= 0) { setTab("pricing"); toast.error(`Pack size ${bad + 1}: enter a pack size name (e.g. 500 ml) and an MRP price`); return; }
+    }
     setSaving(true);
     const fields = {
       name: f.name.trim(), shortName: (f.shortName || f.name).trim().slice(0, 60), slug: slugify(f.slug || f.name), sku: f.sku.trim(),
@@ -201,7 +207,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
       ? await mutate({ action: "editProduct", id: product.id, ...fields })
       : await mutate({
         action: "addProduct", ...fields,
-        variants: variants.map((v) => ({ label: v.label.trim(), sku: v.sku.trim(), mrp: Number(v.mrp) || 0, discount: Number(v.discount) || 0, stock: Number(v.stock) || 0 })),
+        variants: variants.map((v, i) => ({ label: v.label.trim(), sku: v.sku.trim().length >= 2 ? v.sku.trim() : `${(f.sku.trim() || slugify(f.name).slice(0, 14)).toUpperCase()}-${i + 1}${Date.now().toString().slice(-3)}`, mrp: Number(v.mrp) || 0, discount: Number(v.discount) || 0, stock: Number(v.stock) || 0 })),
         images: [...draftImages].sort((a, b) => Number(b.primary) - Number(a.primary)).map((i) => ({ imageUrl: i.url, altText: i.alt })),
       });
     setSaving(false);
@@ -251,7 +257,7 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
         <Button onClick={() => void save(true)} disabled={saving} className="bg-leaf text-accent-foreground hover:bg-leaf/90">{saving && <Loader2 className="animate-spin" />}Publish</Button>
       </div>
 
-      <Tabs defaultValue="basic" className="rounded-xl border border-border bg-card p-4 shadow-warm sm:p-6">
+      <Tabs value={tab} onValueChange={setTab} className="rounded-xl border border-border bg-card p-4 shadow-warm sm:p-6">
         <TabsList className="h-auto flex-wrap justify-start">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           <TabsTrigger value="pricing">Pricing & stock</TabsTrigger>

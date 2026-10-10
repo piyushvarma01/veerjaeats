@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Search, Package, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -141,6 +141,7 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
 function ProductCard({ product }: { product: CatalogProduct }) {
   const { addItem, openCart, openCheckout } = useCart();
   const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
+  const [hovering, setHovering] = useState(false);
   const variant =
     product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0];
   if (!variant) return null;
@@ -164,9 +165,13 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   };
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm">
+    <article
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm"
+      onMouseEnter={() => gallery.length > 1 && setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
       <div className="relative overflow-hidden bg-card">
-        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} />
+        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} hovering={hovering} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             {discount}% off
@@ -264,12 +269,23 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   );
 }
 
-function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
+function ProductGallery({ images, name, slug, hovering }: { images: { url: string; alt: string }[]; name: string; slug: string; hovering: boolean }) {
   const [active, setActive] = useState(0);
+
+  useEffect(() => {
+    if (!hovering || images.length < 2) return;
+    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 1800);
+    return () => clearInterval(timer);
+  }, [hovering, images.length]);
+
+  useEffect(() => {
+    if (!hovering) setActive(0);
+  }, [hovering]);
+
   return (
     <div>
       <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full p-4" aria-label={`Open ${name}`}>
-        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.02]" />
+        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain" />
       </Link>
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5 pb-3">

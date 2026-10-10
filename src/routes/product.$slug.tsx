@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, ShoppingBag, Star, Truck, Zap } from "lucide-react";
@@ -137,13 +137,31 @@ function VariantView({ product, avg, count }: { product: CatalogProduct; avg: nu
 
 function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }) {
   const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
   const track = useRef<HTMLDivElement>(null);
+  const count = images.length;
   const go = (i: number) => {
     setActive(i);
     track.current?.scrollTo({ left: i * track.current.clientWidth, behavior: "smooth" });
   };
+
+  useEffect(() => {
+    if (paused || count < 2) return;
+    const timer = setInterval(() => {
+      setActive((i) => {
+        const next = (i + 1) % count;
+        track.current?.scrollTo({ left: next * (track.current?.clientWidth ?? 0), behavior: "smooth" });
+        return next;
+      });
+    }, 3500);
+    return () => clearInterval(timer);
+  }, [paused, count]);
+
   return (
-    <div className="flex flex-col-reverse gap-3 lg:sticky lg:top-24 lg:flex-row lg:self-start">
+    <div className="flex flex-col-reverse gap-3 lg:sticky lg:top-24 lg:flex-row lg:self-start"
+      onMouseEnter={() => count > 1 && setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+      onTouchStart={() => count > 1 && setPaused(true)}>
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto lg:flex-col">
           {images.map((img, i) => (

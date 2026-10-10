@@ -269,9 +269,8 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   );
 }
 
-function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
+function ProductGallery({ images, name, slug, hovering }: { images: { url: string; alt: string }[]; name: string; slug: string; hovering: boolean }) {
   const [active, setActive] = useState(0);
-  const [hovering, setHovering] = useState(false);
 
   useEffect(() => {
     if (!hovering || images.length < 2) return;
@@ -279,18 +278,14 @@ function ProductGallery({ images, name, slug }: { images: { url: string; alt: st
     return () => clearInterval(timer);
   }, [hovering, images.length]);
 
-  const leave = () => {
-    setHovering(false);
-    setActive(0);
-  };
+  useEffect(() => {
+    if (!hovering) setActive(0);
+  }, [hovering]);
 
   return (
-    <div
-      onMouseEnter={() => images.length > 1 && setHovering(true)}
-      onMouseLeave={leave}
-    >
+    <div>
       <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full p-4" aria-label={`Open ${name}`}>
-        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain transition-opacity duration-300" />
+        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain" />
       </Link>
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5 pb-3">

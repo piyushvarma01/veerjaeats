@@ -118,7 +118,7 @@ function imagesFor(product: CatalogProduct, variantId: string) {
   const own = all.filter((i) => i.variantId === variantId);
   const shared = all.filter((i) => !i.variantId);
   const list = [...own, ...shared];
-  return list.length ? list : all;
+  return list.length ? list : [{ url: product.image_url ?? gheeJar, alt: product.name }];
 }
 
 function imagesOf(product: CatalogProduct) {
@@ -146,22 +146,22 @@ function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }
   };
 
   useEffect(() => {
-    if (paused || count < 2) return;
+    if (paused || count < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const timer = setInterval(() => {
       setActive((i) => {
         const next = (i + 1) % count;
         track.current?.scrollTo({ left: next * (track.current?.clientWidth ?? 0), behavior: "smooth" });
         return next;
       });
-    }, 3500);
+    }, 2000);
     return () => clearInterval(timer);
   }, [paused, count]);
 
   return (
     <div className="flex flex-col-reverse gap-3 lg:sticky lg:top-24 lg:flex-row lg:self-start"
-      onMouseEnter={() => count > 1 && setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
-      onTouchStart={() => count > 1 && setPaused(true)}>
+      onTouchStart={() => count > 1 && setPaused(true)}
+      onTouchEnd={() => setPaused(false)}
+      onTouchCancel={() => setPaused(false)}>
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto lg:flex-col">
           {images.map((img, i) => (

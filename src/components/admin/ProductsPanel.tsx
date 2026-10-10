@@ -209,9 +209,9 @@ function ProductEditor({ product, categories, mutate, onClose, onCreated }: {
   };
 
   const imageHandlers = product ? {
-    onUpload: async (files: File[]) => {
+    onUpload: async (files: File[], variantId?: string | null) => {
       const urls = (await Promise.all(files.map(uploadProductImage))).filter((u): u is string => Boolean(u));
-      if (urls.length) await mutate({ action: "addProductImages", productId: product.id, images: urls.map((imageUrl) => ({ imageUrl, altText: product.name })) });
+      if (urls.length) await mutate({ action: "addProductImages", productId: product.id, variantId: variantId ?? null, images: urls.map((imageUrl) => ({ imageUrl, altText: product.name })) });
     },
     onReorder: (ids: string[]) => void mutate({ action: "reorderProductImages", productId: product.id, ids }),
     onPrimary: (id: string) => void mutate({ action: "setPrimaryImage", productId: product.id, id }),

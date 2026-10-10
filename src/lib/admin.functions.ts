@@ -156,6 +156,7 @@ export const mutationSchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("addProductImages"),
     productId: z.string().uuid(),
+    variantId: z.string().uuid().nullable().optional(),
     images: z.array(z.object({ imageUrl: productImageUrl, altText: z.string().trim().max(160) })).min(1).max(12),
   }),
   z.object({ action: z.literal("updateProductImage"), id: z.string().uuid(), altText: z.string().trim().max(160), imageUrl: productImageUrl.optional() }),
@@ -303,11 +304,17 @@ export const mutateAdminData = createServerFn({ method: "POST" })
       });
     } else if (data.action === "deleteVariant") result = await db.from("product_variants").delete().eq("id", data.id);
     else if (data.action === "addProductImages") {
+      if (data.variantId) {
+        const { data: variant, error } = await db.from("product_variants").select("id").eq("id", data.variantId).eq("product_id", data.productId).maybeSingle();
+        if (error) throw error;
+        if (!variant) throw new Error("Pack size does not belong to this product");
+      }
       const { count } = await db.from("product_images").select("id", { count: "exact", head: true }).eq("product_id", data.productId);
       const existing = count ?? 0;
       result = await db.from("product_images").insert(
         data.images.map((image, index) => ({
           product_id: data.productId, image_url: image.imageUrl, alt_text: image.altText,
+          variant_id: data.variantId ?? null,
           sort_order: existing + index, is_primary: existing === 0 && index === 0,
         })),
       );
@@ -323,6 +330,13 @@ export const mutateAdminData = createServerFn({ method: "POST" })
         if (image?.is_primary) await db.from("products").update({ image_url: data.imageUrl }).eq("id", image.product_id);
       }
     } else if (data.action === "setImageVariant") {
+      if (data.variantId) {
+        const { data: image, error: imageError } = await db.from("product_images").select("product_id").eq("id", data.id).single();
+        if (imageError) throw imageError;
+        const { data: variant, error } = await db.from("product_variants").select("id").eq("id", data.variantId).eq("product_id", image.product_id).maybeSingle();
+        if (error) throw error;
+        if (!variant) throw new Error("Pack size does not belong to this product");
+      }
       result = await db.from("product_images").update({ variant_id: data.variantId }).eq("id", data.id);
     } else if (data.action === "deleteProductImage") {
       const { data: image } = await db.from("product_images").select("id,product_id,image_url,is_primary").eq("id", data.id).maybeSingle();

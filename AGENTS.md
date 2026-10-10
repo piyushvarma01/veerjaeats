@@ -12,3 +12,4 @@
 
 - Storefront theme is controlled by the header and persisted under veerja-theme; semantic tokens supply both modes. Why: keeps the sun/moon switch consistent across page sections.
 - Catalog discovery filters published products in the browser using dynamic category metadata and pantry-group aliases. Why: supports named pantry groups without changing admin-managed categories.
+- Product uploads persist the selected variant on image records and validate product ownership; storefront galleries use only that variant's photos plus shared photos. Why: prevents photos leaking between pack sizes.

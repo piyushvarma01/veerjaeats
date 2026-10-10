@@ -10,7 +10,7 @@ export type ManagedImage = { id: string; url: string; alt: string; primary: bool
 
 type Props = {
   images: ManagedImage[];
-  onUpload: (files: File[]) => Promise<void>;
+  onUpload: (files: File[], variantId?: string | null) => Promise<void>;
   onReorder: (ids: string[]) => void;
   onPrimary: (id: string) => void;
   onDelete: (id: string) => void;
@@ -22,6 +22,7 @@ type Props = {
 
 export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete, onAlt, onReplace, variants, onVariant }: Props) {
   const [uploading, setUploading] = useState(false);
+  const [uploadVariant, setUploadVariant] = useState("");
   const [over, setOver] = useState(false);
   const [dragId, setDragId] = useState<string | null>(null);
   const [preview, setPreview] = useState<ManagedImage | null>(null);
@@ -32,19 +33,29 @@ export function ImageManager({ images, onUpload, onReorder, onPrimary, onDelete,
     const files = Array.from(list).filter((file) => file.type.startsWith("image/"));
     if (!files.length) return;
     setUploading(true);
-    try { await onUpload(files); } finally { setUploading(false); }
+    try { await onUpload(files, uploadVariant || null); } finally { setUploading(false); }
   };
 
   const move = (from: number, to: number) => {
     if (to < 0 || to >= images.length) return;
     const ids = images.map((image) => image.id);
     const [moved] = ids.splice(from, 1);
-    ids.splice(to, 0, moved!);
+    if (!moved) return;
+    ids.splice(to, 0, moved);
     onReorder(ids);
   };
 
   return (
     <div>
+      {variants && onVariant && variants.length > 0 && (
+        <div className="mb-4">
+          <label htmlFor="upload-pack-size" className="mb-2 block text-sm font-medium">Upload photos for</label>
+          <select id="upload-pack-size" value={uploadVariant} disabled={uploading} onChange={(e) => setUploadVariant(e.target.value)} className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm">
+            <option value="">All pack sizes (shared)</option>
+            {variants.map((v) => <option key={v.id} value={v.id}>{v.label}</option>)}
+          </select>
+        </div>
+      )}
       <label
         onDragOver={(e) => { e.preventDefault(); if (!dragId) setOver(true); }}
         onDragLeave={() => setOver(false)}

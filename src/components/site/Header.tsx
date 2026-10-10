@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Menu, Moon, ShoppingBag, Sun, X } from "lucide-react";
+import { Menu, Moon, ShoppingBag, Sun, User, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 
 import { Button } from "@/components/ui/button";
@@ -87,6 +87,9 @@ export function Header({ logoUrl }: { logoUrl?: string | null }) {
         </nav>
 
         <div className="flex shrink-0 items-center gap-1.5">
+          <a href="/account" aria-label="My account and orders" title="My account" className="grid h-10 w-10 place-items-center rounded-md text-foreground hover:bg-accent">
+            <User className="h-5 w-5" />
+          </a>
           <Button size="icon" variant="ghost" onClick={toggleTheme}
             aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
             title={dark ? "Switch to light mode" : "Switch to dark mode"}

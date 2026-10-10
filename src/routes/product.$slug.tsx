@@ -62,12 +62,12 @@ function ProductPage() {
   const { data: reviews } = useSuspenseQuery(reviewsQuery);
   const { data: settings } = useSuspenseQuery(settingsQuery);
   const product = products.find((p) => p.slug === slug) as CatalogProduct | undefined;
+  const own = useQuery({ queryKey: ["product-reviews", product?.id], queryFn: () => getProductReviews({ data: { productId: product!.id } }), enabled: Boolean(product) });
+  const [open, setOpen] = useState<{ kind: "photo" | "video"; url: string } | null>(null);
   if (!product) return null;
   const sameCat = products.filter((p) => p.id !== product.id && p.category?.slug && p.category.slug === product.category?.slug);
   const others = products.filter((p) => p.id !== product.id && !sameCat.includes(p));
   const recommended = [...sameCat, ...others].slice(0, 4) as CatalogProduct[];
-  const own = useQuery({ queryKey: ["product-reviews", product?.id], queryFn: () => getProductReviews({ data: { productId: product!.id } }), enabled: Boolean(product) });
-  const [open, setOpen] = useState<{ kind: "photo" | "video"; url: string } | null>(null);
   type R = { id: string; name: string; city: string; rating: number; review: string; verified?: boolean; media?: { id: string; kind: "photo" | "video"; url: string }[] };
   const list: R[] = own.data?.length ? own.data : reviews.length ? reviews.map((r) => ({ id: r.id, name: r.customer_name, city: r.city, rating: r.rating, review: r.review }))
     : TESTIMONIALS.map((t, i) => ({ id: String(i), name: t.name, city: t.city, rating: t.rating, review: t.review }));

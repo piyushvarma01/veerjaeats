@@ -72,7 +72,6 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   const sorted = useMemo(() => {
     const query = search.trim().toLowerCase();
     const list = products.filter((p) => {
-      const text = `${p.name} ${p.short_name} ${p.description} ${p.category?.name ?? ""}`.toLowerCase();
       return matchesCategory(p, cat) && (!query || productText(p).includes(query));
     });
     if (sort === "featured") list.sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)));

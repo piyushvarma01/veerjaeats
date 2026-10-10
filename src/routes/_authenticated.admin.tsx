@@ -46,7 +46,7 @@ function AdminPage() {
   const [section, setSection] = useState<Section>("dashboard"); const [mobileNav, setMobileNav] = useState(false); const [search, setSearch] = useState("");
   const state = useQuery({ queryKey: ["admin-state"], queryFn: () => stateFn() });
   const data = useQuery({ queryKey: ["admin-data"], queryFn: () => dataFn(), enabled: state.data?.isAdmin === true });
-  const mutation = useMutation({ mutationFn: (payload: AdminMutation) => mutateFn({ data: payload }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-data"] }); toast.success("Changes saved"); }, onError: (error) => toast.error(error instanceof Error ? error.message : "Could not save changes") });
+  const mutation = useMutation({ mutationFn: (payload: AdminMutation) => mutateFn({ data: payload }), onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["admin-data"] }); toast.success("Changes saved"); }, onError: (error) => toast.error(friendlyError(error)) });
   const title = NAV.find((item) => item.id === section)?.label ?? "Dashboard";
   const logout = async () => { await queryClient.cancelQueries(); queryClient.clear(); await supabase.auth.signOut(); await navigate({ to: "/auth", replace: true }); };
   if (state.isLoading) return <LoadingScreen />;
@@ -64,6 +64,18 @@ function AdminPage() {
   </div>;
 }
 
+function friendlyError(error: unknown) {
+  const raw = error instanceof Error ? error.message : "";
+  if (/duplicate key|already exists/i.test(raw)) return "That web address or SKU is already used by another product. Change it and try again.";
+  if (raw.trim().startsWith("[")) {
+    try {
+      const issues = JSON.parse(raw) as { path?: (string | number)[]; message?: string }[];
+      const first = issues[0];
+      if (first) return `Please check "${String(first.path?.filter((p) => typeof p === "string").pop() ?? "form")}": ${first.message ?? "invalid value"}`;
+    } catch { /* fall through */ }
+  }
+  return raw || "Could not save changes";
+}
 function LoadingScreen() { return <main className="grid min-h-screen place-items-center bg-beige"><Loader2 className="h-8 w-8 animate-spin text-gold-deep" /></main>; }
 function LoadingPanel() { return <div className="grid min-h-[55vh] place-items-center"><Loader2 className="h-7 w-7 animate-spin text-gold-deep" /></div>; }
 function ErrorPanel({ message }: { message: string }) { return <div className="rounded-lg border border-destructive/25 bg-card p-8 text-center text-destructive">{message}</div>; }

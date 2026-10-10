@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { BadgeCheck, ShoppingBag, Star, Truck } from "lucide-react";
+import { BadgeCheck, Search, Package, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,7 @@ export type CatalogProduct = {
   is_bestseller?: boolean;
   is_new_arrival?: boolean;
   is_featured?: boolean;
+  short_description?: string;
   images?: { url: string; alt: string }[];
   category?: { name: string; slug: string; sort_order: number } | null;
   product_variants: Variant[];
@@ -48,6 +49,7 @@ const discountOf = (variant: Variant) =>
 export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   const [sort, setSort] = useState<SortKey>("featured");
   const [cat, setCat] = useState("all");
+  const [search, setSearch] = useState("");
   const categories = useMemo(() => {
     const map = new Map<string, { name: string; slug: string; sort_order: number }>();
     products.forEach((p) => p.category && map.set(p.category.slug, p.category));
@@ -55,56 +57,60 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   }, [products]);
 
   const sorted = useMemo(() => {
-    const list = products.filter((p) => cat === "all" || p.category?.slug === cat);
+    const query = search.trim().toLowerCase();
+    const list = products.filter((p) => {
+      const text = `${p.name} ${p.short_name} ${p.description} ${p.category?.name ?? ""}`.toLowerCase();
+      const categoryMatch = cat === "all" || p.category?.slug === cat ||
+        (cat === "ghee" && text.includes("ghee")) ||
+        (cat === "khapli-aata" && /khapli|atta|aata|flour/.test(text)) ||
+        (cat === "isabgol" && /isabgol|psyllium/.test(text)) ||
+        (cat === "powders" && /powder/.test(text));
+      return categoryMatch && (!query || text.includes(query));
+    });
     if (sort === "featured") list.sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)));
-    const best = (product: CatalogProduct) => product.product_variants[0]!;
+    const best = (product: CatalogProduct): Variant => product.product_variants[0] ?? { id: "", label: "", price: 0, mrp: 0, stock: 0 };
     if (sort === "price-asc") list.sort((a, b) => best(a).price - best(b).price);
     if (sort === "price-desc") list.sort((a, b) => best(b).price - best(a).price);
     if (sort === "discount") list.sort((a, b) => discountOf(best(b)) - discountOf(best(a)));
     return list;
-  }, [products, sort, cat]);
+  }, [products, sort, cat, search]);
 
   return (
     <section id="our-ghee" className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:py-24">
       <SectionHeading
-        eyebrow="Shop A2 Ghee"
-        title="Our Golden Goodness"
-        subtitle="Pick your pack size, check the savings, and add it straight to your cart."
+        eyebrow="The Veerja pantry"
+        title="Our Products"
       />
 
-      {categories.length > 1 && (
-        <div className="mt-8 flex flex-wrap gap-2">
-          {[{ slug: "all", name: "All products" }, ...categories].map((c) => (
-            <button key={c.slug} onClick={() => setCat(c.slug)} className={cn("rounded-full border px-4 py-1.5 text-sm font-medium transition-colors", cat === c.slug ? "border-gold bg-gold text-brown" : "border-border bg-card text-foreground/70 hover:border-gold/60")}>{c.name}</button>
-          ))}
+      <div className="mt-8 grid gap-4 border-y border-border bg-secondary/40 py-5 md:grid-cols-[minmax(0,1fr)_220px_220px]">
+        <div className="relative min-w-0">
+          <Search className="pointer-events-none absolute top-3.5 left-3.5 h-5 w-5 text-muted-foreground" />
+          <input type="search" aria-label="Search products" placeholder="Search products…" value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-12 w-full rounded-lg border border-input bg-card pr-4 pl-11 text-sm text-foreground outline-none focus:ring-2 focus:ring-ring" />
         </div>
-      )}
-
-      <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-border py-3">
-        <span className="text-xs font-semibold tracking-[0.18em] text-muted-foreground uppercase">
-          Sort by
-        </span>
-        {SORTS.map((option) => (
-          <button
-            key={option.id}
-            onClick={() => setSort(option.id)}
-            className={cn(
-              "rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-              sort === option.id
-                ? "bg-gold/15 text-brown"
-                : "text-muted-foreground hover:text-brown",
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
-        <span className="ml-auto text-sm text-muted-foreground">
-          {sorted.length} {sorted.length === 1 ? "product" : "products"}
-        </span>
+        <select aria-label="Product category" value={cat} onChange={(e) => setCat(e.target.value)} className="h-12 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:ring-2 focus:ring-ring">
+          <option value="all">All categories</option>
+          <option value="ghee">Ghee</option>
+          <option value="khapli-aata">Khapli Aata</option>
+          <option value="isabgol">Isabgol</option>
+          <option value="powders">Powders</option>
+          {categories.filter((c) => !["ghee", "khapli-aata", "isabgol", "powders"].includes(c.slug)).map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+        </select>
+        <select aria-label="Sort products" value={sort} onChange={(e) => setSort(e.target.value as SortKey)} className="h-12 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground focus:ring-2 focus:ring-ring">
+          {SORTS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+        </select>
       </div>
+      <p className="mt-4 flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
+        <Package className="h-4 w-4 text-leaf" /> {sorted.length} {sorted.length === 1 ? "product" : "products"}
+      </p>
+      {sorted.length === 0 && <div className="py-16 text-center">
+        <p className="text-lg font-medium text-foreground">No products found</p>
+        <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setCat("all"); }}>Clear filters</Button>
+      </div>}
 
       <Reveal className="mt-8">
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sorted.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
@@ -116,12 +122,13 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
 
 function ProductCard({ product }: { product: CatalogProduct }) {
   const { addItem, openCart, openCheckout } = useCart();
-  const [variantId, setVariantId] = useState(product.product_variants[0]!.id);
+  const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
   const variant =
-    product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0]!;
+    product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0];
+  if (!variant) return null;
   const discount = discountOf(variant);
   const gallery = product.images?.length ? product.images : [{ url: product.image_url ?? gheeJar, alt: product.name }];
-  const image = gallery[0]!.url;
+  const image = gallery[0]?.url ?? gheeJar;
   const outOfStock = variant.stock <= 0;
 
   const add = () => {
@@ -137,8 +144,8 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   };
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-warm transition-shadow hover:shadow-warm-lg">
-      <div className="relative overflow-hidden bg-beige">
+    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm">
+      <div className="relative overflow-hidden bg-card">
         <ProductGallery images={gallery} name={product.name} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
@@ -146,6 +153,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           </span>
         )}
         <div className="pointer-events-none absolute top-3 right-3 flex flex-col items-end gap-1">
+          {product.is_featured && <span className="rounded-md bg-gold px-2.5 py-1 text-xs font-semibold text-primary-foreground">Featured</span>}
           {product.is_bestseller && <span className="rounded-full bg-gold px-2.5 py-1 text-xs font-semibold text-brown">Bestseller</span>}
           {product.is_new_arrival && <span className="rounded-full bg-brown px-2.5 py-1 text-xs font-semibold text-cream">New</span>}
         </div>
@@ -156,7 +164,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
         )}
       </div>
 
-      <div className="flex min-w-0 flex-1 flex-col p-5">
+      <div className="flex min-w-0 flex-1 flex-col p-4">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1 rounded bg-leaf/12 px-1.5 py-0.5 text-xs font-semibold text-leaf">
             4.9 <Star className="h-3 w-3 fill-current" />
@@ -166,12 +174,12 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           </span>
         </div>
 
-        <h3 className="mt-2 font-display text-xl font-semibold text-brown">{product.name}</h3>
-        <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{product.description}</p>
+        <h3 className="mt-2 font-display text-xl font-semibold text-foreground">{product.name}</h3>
+        <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{product.short_description || product.description}</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {product.product_variants.map((item) => (
-            <button
+            <Button variant="outline" size="sm"
               key={item.id}
               onClick={() => setVariantId(item.id)}
               className={cn(
@@ -182,7 +190,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
               )}
             >
               {item.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -205,7 +213,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           )}
         </p>
 
-        <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+        <div className="mt-auto grid grid-cols-1 gap-2 pt-5">
           <Button
             disabled={outOfStock}
             onClick={() => {
@@ -215,20 +223,20 @@ function ProductCard({ product }: { product: CatalogProduct }) {
                 description: `1 × ${product.short_name} (${variant.label})`,
               });
             }}
-            className="flex-1 bg-gradient-to-r from-gold to-gold-deep text-primary-foreground shadow-warm hover:opacity-95"
+            className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <ShoppingBag className="mr-2 h-4 w-4" /> Add to Cart
           </Button>
           <Button
-            variant="outline"
+            variant="purchase"
             disabled={outOfStock}
             onClick={() => {
               add();
               openCheckout();
             }}
-            className="flex-1 border-brown/25 bg-brown text-primary-foreground hover:bg-brown/90"
+            className="h-11 w-full"
           >
-            Buy Now
+            <Zap className="h-4 w-4" /> Buy Now
           </Button>
         </div>
       </div>
@@ -254,8 +262,8 @@ function ProductGallery({ images, name }: { images: { url: string; alt: string }
         className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {images.map((img, i) => (
-          <button key={i} type="button" onClick={() => { setActive(i); setOpen(true); }} className="w-full shrink-0 snap-center p-3" aria-label={`View photo ${i + 1} of ${name}`}>
-            <img src={img.url} alt={img.alt || name} loading="lazy" className="mx-auto h-56 w-full cursor-zoom-in object-contain" />
+          <button key={i} type="button" onClick={() => { setActive(i); setOpen(true); }} className="aspect-square w-full shrink-0 snap-center p-4" aria-label={`View photo ${i + 1} of ${name}`}>
+            <img src={img.url} alt={img.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full cursor-zoom-in object-contain" />
           </button>
         ))}
       </div>
@@ -281,7 +289,7 @@ function ProductGallery({ images, name }: { images: { url: string; alt: string }
             onMouseMove={(e) => { if (!zoom) return; const r = e.currentTarget.getBoundingClientRect(); setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
             onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setZoom(zoom ? null : { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
           >
-            <img src={images[active]!.url} alt={images[active]!.alt || name}
+            <img src={images[active]?.url} alt={images[active]?.alt || name}
               style={zoom ? { transform: "scale(2.2)", transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}
               className={cn("h-full w-full object-contain transition-transform duration-200", zoom ? "cursor-zoom-out" : "cursor-zoom-in")} />
             {images.length > 1 && (

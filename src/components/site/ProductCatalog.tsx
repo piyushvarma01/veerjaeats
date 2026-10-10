@@ -141,6 +141,7 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
 function ProductCard({ product }: { product: CatalogProduct }) {
   const { addItem, openCart, openCheckout } = useCart();
   const [variantId, setVariantId] = useState(product.product_variants[0]?.id ?? "");
+  const [hovering, setHovering] = useState(false);
   const variant =
     product.product_variants.find((item) => item.id === variantId) ?? product.product_variants[0];
   if (!variant) return null;
@@ -164,9 +165,13 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   };
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm">
+    <article
+      className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm"
+      onMouseEnter={() => gallery.length > 1 && setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+    >
       <div className="relative overflow-hidden bg-card">
-        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} />
+        <ProductGallery key={variant.id} images={gallery} name={product.name} slug={product.slug} hovering={hovering} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             {discount}% off

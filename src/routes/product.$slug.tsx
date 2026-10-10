@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck, ShoppingBag, Star, Truck, Zap } from "lucide-react";
@@ -137,31 +137,14 @@ function VariantView({ product, avg, count }: { product: CatalogProduct; avg: nu
 
 function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }) {
   const [active, setActive] = useState(0);
-  const [paused, setPaused] = useState(false);
   const track = useRef<HTMLDivElement>(null);
-  const count = images.length;
   const go = (i: number) => {
     setActive(i);
     track.current?.scrollTo({ left: i * track.current.clientWidth, behavior: "smooth" });
   };
 
-  useEffect(() => {
-    if (paused || count < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = setInterval(() => {
-      setActive((i) => {
-        const next = (i + 1) % count;
-        track.current?.scrollTo({ left: next * (track.current?.clientWidth ?? 0), behavior: "smooth" });
-        return next;
-      });
-    }, 2000);
-    return () => clearInterval(timer);
-  }, [paused, count]);
-
   return (
-    <div className="flex flex-col-reverse gap-3 lg:sticky lg:top-24 lg:flex-row lg:self-start"
-      onTouchStart={() => count > 1 && setPaused(true)}
-      onTouchEnd={() => setPaused(false)}
-      onTouchCancel={() => setPaused(false)}>
+    <div className="flex flex-col-reverse gap-3 lg:sticky lg:top-24 lg:flex-row lg:self-start">
       {images.length > 1 && (
         <div className="flex gap-2 overflow-x-auto lg:flex-col">
           {images.map((img, i) => (
@@ -172,15 +155,16 @@ function Gallery({ product, images }: { product: CatalogProduct; images: Img[] }
           ))}
         </div>
       )}
-      <div className="relative min-w-0 flex-1 overflow-hidden rounded-lg border border-border bg-card">
+      <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-gold/30 bg-[radial-gradient(circle_at_50%_40%,var(--color-card)_0%,var(--color-secondary)_100%)] shadow-warm">
         <div ref={track} onScroll={(e) => { const el = e.currentTarget; const i = Math.round(el.scrollLeft / el.clientWidth); if (i !== active) setActive(i); }}
           className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {images.map((img, i) => (
-            <div key={i} className="aspect-square w-full shrink-0 snap-center p-6">
-              <img src={img.url} alt={img.alt || product.name} width={2500} height={2500} className="h-full w-full object-contain" />
+            <div key={i} className="aspect-square w-full shrink-0 snap-center p-2 sm:p-3">
+              <img src={img.url} alt={img.alt || product.name} width={2500} height={2500} className="h-full w-full scale-[1.04] object-contain drop-shadow-xl" />
             </div>
           ))}
         </div>
+        <span className="pointer-events-none absolute top-3 left-3 rounded-full border border-gold/40 bg-background/80 px-3 py-1 text-[11px] font-semibold tracking-wider text-gold-deep uppercase backdrop-blur">Pure · Lab tested</span>
         {images.length > 1 && <span className="absolute right-3 bottom-3 rounded-full bg-background/85 px-2.5 py-1 text-xs text-foreground">{active + 1} / {images.length}</span>}
       </div>
     </div>

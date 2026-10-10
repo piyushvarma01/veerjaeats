@@ -268,15 +268,19 @@ function ProductCard({ product }: { product: CatalogProduct }) {
 
 function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
   const [active, setActive] = useState(0);
+  const [hovering, setHovering] = useState(false);
 
   useEffect(() => {
-    if (images.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 2000);
+    if (!hovering || images.length < 2 || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setActive((i) => (i + 1) % images.length);
+    const timer = setInterval(() => setActive((i) => (i + 1) % images.length), 1200);
     return () => clearInterval(timer);
-  }, [images.length]);
+  }, [hovering, images.length]);
 
   return (
-    <div>
+    <div
+      onPointerEnter={(e) => { if (e.pointerType === "mouse") setHovering(true); }}
+      onPointerLeave={(e) => { if (e.pointerType === "mouse") { setHovering(false); setActive(0); } }}>
       <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full overflow-hidden" aria-label={`Open ${name}`}>
         <div className="flex h-full transition-transform duration-500 ease-in-out motion-reduce:transition-none" style={{ transform: `translateX(-${active * 100}%)` }}>
           {images.map((image, i) => <div key={`${image.url}-${i}`} className="h-full w-full shrink-0 p-4" aria-hidden={i !== active}><img src={image.url} alt={image.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain" /></div>)}

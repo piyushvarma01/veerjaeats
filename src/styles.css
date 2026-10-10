@@ -201,3 +201,9 @@ a[href*="lovable.dev/projects"],
 a[href*="lovable.app/?utm"] {
   display: none !important;
 }
+
+@media print {
+  body * { visibility: hidden; }
+  #print-bill, #print-bill * { visibility: visible; }
+  #print-bill { position: absolute; inset: 0; padding: 16px; }
+}

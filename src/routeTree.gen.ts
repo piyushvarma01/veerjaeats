@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated.admin'
+import { Route as ProductSlugRouteImport } from './routes/product.$slug'
 import { Route as ApiPublicProductImageRouteImport } from './routes/api/public/product-image'
 import { Route as ApiPublicSiteImageRouteImport } from './routes/api/public/site-image'
 
@@ -35,6 +36,11 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ProductSlugRoute = ProductSlugRouteImport.update({
+  id: '/product/$slug',
+  path: '/product/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicProductImageRoute = ApiPublicProductImageRouteImport.update({
   id: '/api/public/product-image',
   path: '/api/public/product-image',
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
@@ -66,6 +74,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/product/$slug': typeof ProductSlugRoute
   '/api/public/product-image': typeof ApiPublicProductImageRoute
   '/api/public/site-image': typeof ApiPublicSiteImageRoute
 }
@@ -75,6 +84,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/product/$slug'
     | '/api/public/product-image'
     | '/api/public/site-image'
   fileRoutesByTo: FileRoutesByTo
@@ -82,6 +92,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/admin'
+    | '/product/$slug'
     | '/api/public/product-image'
     | '/api/public/site-image'
   id:
@@ -90,6 +101,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/admin'
+    | '/product/$slug'
     | '/api/public/product-image'
     | '/api/public/site-image'
   fileRoutesById: FileRoutesById
@@ -98,6 +110,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ProductSlugRoute: typeof ProductSlugRoute
   ApiPublicProductImageRoute: typeof ApiPublicProductImageRoute
   ApiPublicSiteImageRoute: typeof ApiPublicSiteImageRoute
 }
@@ -132,6 +145,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/product/$slug': {
+      id: '/product/$slug'
+      path: '/product/$slug'
+      fullPath: '/product/$slug'
+      preLoaderRoute: typeof ProductSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/product-image': {
       id: '/api/public/product-image'
       path: '/api/public/product-image'
@@ -164,6 +184,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ProductSlugRoute: ProductSlugRoute,
   ApiPublicProductImageRoute: ApiPublicProductImageRoute,
   ApiPublicSiteImageRoute: ApiPublicSiteImageRoute,
 }

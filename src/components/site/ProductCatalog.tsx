@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from "react";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { BadgeCheck, Search, Package, ShoppingBag, Star, Truck, Zap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,6 +46,19 @@ const SORTS: { id: SortKey; label: string }[] = [
 const discountOf = (variant: Variant) =>
   variant.mrp > variant.price ? Math.round(((variant.mrp - variant.price) / variant.mrp) * 100) : 0;
 
+const productText = (p: CatalogProduct) => `${p.name} ${p.short_name} ${p.description} ${p.category?.name ?? ""}`.toLowerCase();
+const GROUPS: { slug: string; name: string; test: RegExp }[] = [
+  { slug: "ghee", name: "Ghee", test: /ghee/ },
+  { slug: "khapli-aata", name: "Khapli Aata", test: /khapli|atta|aata|flour/ },
+  { slug: "isabgol", name: "Isabgol", test: /isabgol|psyllium/ },
+  { slug: "powders", name: "Powders", test: /powder/ },
+];
+export function matchesCategory(p: CatalogProduct, cat: string) {
+  if (cat === "all" || p.category?.slug === cat) return true;
+  const group = GROUPS.find((g) => g.slug === cat);
+  return Boolean(group && group.test.test(productText(p)));
+}
+
 export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   const [sort, setSort] = useState<SortKey>("featured");
   const [cat, setCat] = useState("all");
@@ -59,13 +72,7 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
   const sorted = useMemo(() => {
     const query = search.trim().toLowerCase();
     const list = products.filter((p) => {
-      const text = `${p.name} ${p.short_name} ${p.description} ${p.category?.name ?? ""}`.toLowerCase();
-      const categoryMatch = cat === "all" || p.category?.slug === cat ||
-        (cat === "ghee" && text.includes("ghee")) ||
-        (cat === "khapli-aata" && /khapli|atta|aata|flour/.test(text)) ||
-        (cat === "isabgol" && /isabgol|psyllium/.test(text)) ||
-        (cat === "powders" && /powder/.test(text));
-      return categoryMatch && (!query || text.includes(query));
+      return matchesCategory(p, cat) && (!query || productText(p).includes(query));
     });
     if (sort === "featured") list.sort((a, b) => Number(Boolean(b.is_featured)) - Number(Boolean(a.is_featured)));
     const best = (product: CatalogProduct): Variant => product.product_variants[0] ?? { id: "", label: "", price: 0, mrp: 0, stock: 0 };
@@ -82,7 +89,18 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
         title="Our Products"
       />
 
-      <div className="mt-8 grid gap-4 border-y border-border bg-secondary/40 py-5 md:grid-cols-[minmax(0,1fr)_220px_220px]">
+      <div className="mt-8 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none]" role="tablist" aria-label="Browse categories">
+        {[{ slug: "all", name: "All products" }, ...GROUPS, ...categories.filter((c) => !GROUPS.some((g) => g.slug === c.slug))].map((c) => {
+          const count = products.filter((p) => matchesCategory(p, c.slug)).length;
+          return (
+            <button key={c.slug} type="button" role="tab" aria-selected={cat === c.slug} onClick={() => setCat(c.slug)}
+              className={cn("shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors", cat === c.slug ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-foreground hover:border-gold")}>
+              {c.name} <span className="ml-1 opacity-70">({count})</span>
+            </button>
+          );
+        })}
+      </div>
+      <div className="mt-4 grid gap-4 border-y border-border bg-secondary/40 py-5 md:grid-cols-[minmax(0,1fr)_220px_220px]">
         <div className="relative min-w-0">
           <Search className="pointer-events-none absolute top-3.5 left-3.5 h-5 w-5 text-muted-foreground" />
           <input type="search" aria-label="Search products" placeholder="Search products…" value={search}
@@ -146,7 +164,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-shadow hover:shadow-warm">
       <div className="relative overflow-hidden bg-card">
-        <ProductGallery images={gallery} name={product.name} />
+        <ProductGallery images={gallery} name={product.name} slug={product.slug} />
         {discount > 0 && (
           <span className="absolute top-3 left-3 rounded-full bg-leaf px-2.5 py-1 text-xs font-semibold text-accent-foreground">
             {discount}% off
@@ -174,7 +192,7 @@ function ProductCard({ product }: { product: CatalogProduct }) {
           </span>
         </div>
 
-        <h3 className="mt-2 font-display text-xl font-semibold text-foreground">{product.name}</h3>
+        <h3 className="mt-2 font-display text-xl font-semibold text-foreground"><Link to="/product/$slug" params={{ slug: product.slug }} className="hover:text-gold-deep">{product.name}</Link></h3>
         <p className="mt-1.5 line-clamp-2 text-sm text-muted-foreground">{product.short_description || product.description}</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
@@ -244,72 +262,20 @@ function ProductCard({ product }: { product: CatalogProduct }) {
   );
 }
 
-function ProductGallery({ images, name }: { images: { url: string; alt: string }[]; name: string }) {
+function ProductGallery({ images, name, slug }: { images: { url: string; alt: string }[]; name: string; slug: string }) {
   const [active, setActive] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
-  const track = useRef<HTMLDivElement>(null);
-  const go = (index: number) => {
-    setActive(index);
-    const el = track.current;
-    if (el) el.scrollTo({ left: index * el.clientWidth, behavior: "smooth" });
-  };
   return (
     <div>
-      <div
-        ref={track}
-        onScroll={(e) => { const el = e.currentTarget; const i = Math.round(el.scrollLeft / el.clientWidth); if (i !== active) setActive(i); }}
-        className="flex snap-x snap-mandatory overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      >
-        {images.map((img, i) => (
-          <button key={i} type="button" onClick={() => { setActive(i); setOpen(true); }} className="aspect-square w-full shrink-0 snap-center p-4" aria-label={`View photo ${i + 1} of ${name}`}>
-            <img src={img.url} alt={img.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full cursor-zoom-in object-contain" />
-          </button>
-        ))}
-      </div>
+      <Link to="/product/$slug" params={{ slug }} className="block aspect-square w-full p-4" aria-label={`Open ${name}`}>
+        <img src={images[active]?.url} alt={images[active]?.alt || name} loading="lazy" width={2500} height={2500} className="h-full w-full object-contain transition-transform duration-300 hover:scale-[1.02]" />
+      </Link>
       {images.length > 1 && (
-        <>
-          <div className="flex justify-center gap-1.5 pb-2 sm:hidden">
-            {images.map((_, i) => <span key={i} className={cn("h-1.5 rounded-full transition-all", i === active ? "w-5 bg-gold-deep" : "w-1.5 bg-brown/25")} />)}
-          </div>
-          <div className="hidden gap-2 px-3 pb-3 sm:flex">
-            {images.slice(0, 6).map((img, i) => (
-              <button key={i} type="button" onClick={() => go(i)} aria-label={`Show photo ${i + 1}`} className={cn("h-12 w-12 overflow-hidden rounded-md border-2 bg-card", i === active ? "border-gold" : "border-transparent opacity-70 hover:opacity-100")}>
-                <img src={img.url} alt="" className="h-full w-full object-contain" />
-              </button>
-            ))}
-          </div>
-        </>
+        <div className="flex justify-center gap-1.5 pb-3">
+          {images.slice(0, 6).map((_, i) => (
+            <button key={i} type="button" onClick={() => setActive(i)} aria-label={`Show photo ${i + 1}`} className={cn("h-1.5 rounded-full transition-all", i === active ? "w-5 bg-gold-deep" : "w-1.5 bg-brown/25")} />
+          ))}
+        </div>
       )}
-      <Dialog open={open} onOpenChange={(o) => { setOpen(o); setZoom(null); }}>
-        <DialogContent className="max-w-5xl bg-card p-3">
-          <DialogTitle className="sr-only">{name} photos</DialogTitle>
-          <div
-            className="relative h-[70vh] overflow-hidden rounded-lg bg-beige"
-            onMouseMove={(e) => { if (!zoom) return; const r = e.currentTarget.getBoundingClientRect(); setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
-            onClick={(e) => { const r = e.currentTarget.getBoundingClientRect(); setZoom(zoom ? null : { x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 }); }}
-          >
-            <img src={images[active]?.url} alt={images[active]?.alt || name}
-              style={zoom ? { transform: "scale(2.2)", transformOrigin: `${zoom.x}% ${zoom.y}%` } : undefined}
-              className={cn("h-full w-full object-contain transition-transform duration-200", zoom ? "cursor-zoom-out" : "cursor-zoom-in")} />
-            {images.length > 1 && (
-              <>
-                <button type="button" aria-label="Previous photo" onClick={(e) => { e.stopPropagation(); setZoom(null); setActive((active - 1 + images.length) % images.length); }} className="absolute top-1/2 left-3 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-xl text-brown shadow">‹</button>
-                <button type="button" aria-label="Next photo" onClick={(e) => { e.stopPropagation(); setZoom(null); setActive((active + 1) % images.length); }} className="absolute top-1/2 right-3 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-card/90 text-xl text-brown shadow">›</button>
-              </>
-            )}
-          </div>
-          {images.length > 1 && (
-            <div className="flex justify-center gap-2 overflow-x-auto pt-2">
-              {images.map((img, i) => (
-                <button key={i} type="button" onClick={() => { setActive(i); setZoom(null); }} className={cn("h-14 w-14 shrink-0 overflow-hidden rounded-md border-2 bg-beige", i === active ? "border-gold" : "border-transparent opacity-70")}>
-                  <img src={img.url} alt="" className="h-full w-full object-contain" />
-                </button>
-              ))}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

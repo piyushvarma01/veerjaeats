@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { AdminMutation, getAdminData } from "@/lib/admin.functions";
+import { toWebP } from "@/lib/image-webp";
 import { cn } from "@/lib/utils";
 
 export type AdminData = Awaited<ReturnType<typeof getAdminData>>;
@@ -18,9 +19,10 @@ export type Mutate = (payload: AdminMutation) => Promise<MutateResult>;
 export const slugify = (value: string) =>
   value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 
-export async function uploadProductImage(file: File): Promise<string | null> {
-  if (!file.type.startsWith("image/")) { toast.error(`${file.name} is not an image`); return null; }
-  if (file.size > 5 * 1024 * 1024) { toast.error(`${file.name} is larger than 5 MB`); return null; }
+export async function uploadProductImage(original: File): Promise<string | null> {
+  if (!original.type.startsWith("image/")) { toast.error(`${original.name} is not an image`); return null; }
+  if (original.size > 15 * 1024 * 1024) { toast.error(`${original.name} is larger than 15 MB`); return null; }
+  const file = await toWebP(original);
   const extension = file.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
   const path = `${crypto.randomUUID()}.${extension}`;
   const { error } = await supabase.storage.from("product-images").upload(path, file, { contentType: file.type, upsert: false });

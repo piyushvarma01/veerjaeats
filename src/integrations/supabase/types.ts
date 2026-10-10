@@ -221,6 +221,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           admin_notes?: string
@@ -234,6 +235,7 @@ export type Database = {
           subtotal: number
           total: number
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           admin_notes?: string
@@ -247,6 +249,7 @@ export type Database = {
           subtotal?: number
           total?: number
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -472,38 +475,97 @@ export type Database = {
         }
         Relationships: []
       }
+      review_media: {
+        Row: {
+          created_at: string
+          id: string
+          kind: string
+          review_id: string
+          sort_order: number
+          storage_path: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kind: string
+          review_id: string
+          sort_order?: number
+          storage_path: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kind?: string
+          review_id?: string
+          sort_order?: number
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_media_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reviews: {
         Row: {
           city: string
           created_at: string
           customer_name: string
           id: string
+          order_id: string | null
+          product_id: string | null
           rating: number
           review: string
           status: Database["public"]["Enums"]["review_status"]
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           city?: string
           created_at?: string
           customer_name: string
           id?: string
+          order_id?: string | null
+          product_id?: string | null
           rating: number
           review: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           city?: string
           created_at?: string
           customer_name?: string
           id?: string
+          order_id?: string | null
+          product_id?: string | null
           rating?: number
           review?: string
           status?: Database["public"]["Enums"]["review_status"]
           updated_at?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reviews_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       site_settings: {
         Row: {

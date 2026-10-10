@@ -136,7 +136,9 @@ function ReviewEditor({ review, mutate, busy }: { review: AdminData["reviews"][n
   const [customerName, setCustomerName] = useState(review.customer_name); const [city, setCity] = useState(review.city);
   const [rating, setRating] = useState(String(review.rating)); const [text, setText] = useState(review.review); const [status, setStatus] = useState(review.status);
   return <article className="border border-border bg-background p-4">
-    <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="text-gold-deep">{"★".repeat(Number(rating) || 0)}</span><Status value={status} /></div><Button size="icon" variant="ghost" aria-label="Delete review" disabled={busy} onClick={() => { if (confirm(`Delete the review from ${customerName}?`)) mutate({ action: "deleteReview", id: review.id }); }}><Trash2 /></Button></div>
+    <div className="mb-4 flex items-center justify-between gap-3"><div className="flex items-center gap-2"><span className="text-gold-deep">{"★".repeat(Number(rating) || 0)}</span><Status value={status} /></div><Button size="icon" variant="ghost" aria-label="Delete review" disabled={busy} onClick={async () => { if (!confirm(`Delete the review from ${customerName} with all its photos and videos?`)) return; const paths = review.review_media.map((m) => m.storage_path); if (paths.length) await supabase.storage.from("review-media").remove(paths); mutate({ action: "deleteReview", id: review.id }); }}><Trash2 /></Button></div>
+    {(review.products?.name || review.order_id) && <p className="-mt-2 mb-3 text-xs text-muted-foreground">{review.products?.name && <>For <span className="font-medium text-foreground">{review.products.name}</span></>}{review.order_id && <span className="ml-2 rounded bg-leaf/12 px-1.5 py-0.5 font-semibold text-leaf">Verified buyer</span>}</p>}
+    <ReviewMedia media={review.review_media} />
     <div className="grid gap-3 sm:grid-cols-2"><div><Label htmlFor={`review-name-${review.id}`}>Customer name</Label><Input id={`review-name-${review.id}`} value={customerName} onChange={(e) => setCustomerName(e.target.value)} /></div><div><Label htmlFor={`review-city-${review.id}`}>City</Label><Input id={`review-city-${review.id}`} value={city} onChange={(e) => setCity(e.target.value)} /></div><div><Label htmlFor={`review-rating-${review.id}`}>Rating</Label><Select value={rating} onValueChange={setRating}><SelectTrigger id={`review-rating-${review.id}`}><SelectValue /></SelectTrigger><SelectContent>{[5, 4, 3, 2, 1].map((value) => <SelectItem key={value} value={String(value)}>{value} stars</SelectItem>)}</SelectContent></Select></div><div><Label htmlFor={`review-status-${review.id}`}>Visibility</Label><Select value={status} onValueChange={(value: "pending" | "approved" | "rejected") => setStatus(value)}><SelectTrigger id={`review-status-${review.id}`}><SelectValue /></SelectTrigger><SelectContent><SelectItem value="approved">Published</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="rejected">Hidden</SelectItem></SelectContent></Select></div></div>
     <div className="mt-3"><Label htmlFor={`review-text-${review.id}`}>Review message</Label><Textarea id={`review-text-${review.id}`} rows={4} value={text} onChange={(e) => setText(e.target.value)} /></div>
     <Button className="mt-4 bg-leaf text-accent-foreground hover:bg-leaf/90" disabled={busy || customerName.trim().length < 2 || text.trim().length < 2} onClick={() => mutate({ action: "updateReview", id: review.id, customerName: customerName.trim(), city: city.trim(), rating: Number(rating), review: text.trim(), status })}>{busy ? <Loader2 className="animate-spin" /> : <Save />}Save review</Button>
@@ -182,4 +184,25 @@ function BrandingPanel({ logoUrl, mutate, busy }: { logoUrl: string | null; muta
       </div>
     </div>
   </section>;
+}
+
+function ReviewMedia({ media }: { media: { id: string; kind: string; storage_path: string; sort_order: number }[] }) {
+  const qc = useQueryClient();
+  const urls = useQuery({
+    queryKey: ["review-media-urls", media.map((m) => m.id).join(",")],
+    enabled: media.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase.storage.from("review-media").createSignedUrls(media.map((m) => m.storage_path), 3600);
+      return Object.fromEntries((data ?? []).map((d) => [d.path ?? "", d.signedUrl]));
+    },
+  });
+  if (!media.length) return null;
+  const remove = async (m: { id: string; storage_path: string }) => {
+    if (!confirm("Delete this photo/video from the review?")) return;
+    const { error } = await supabase.from("review_media").delete().eq("id", m.id);
+    if (error) { toast.error("Could not delete"); return; }
+    await supabase.storage.from("review-media").remove([m.storage_path]);
+    toast.success("Removed"); void qc.invalidateQueries({ queryKey: ["admin-data"] });
+  };
+  return <div className="mb-4 flex flex-wrap gap-2">{[...media].sort((a, b) => a.sort_order - b.sort_order).map((m) => { const url = urls.data?.[m.storage_path]; return <div key={m.id} className="relative h-24 w-24 overflow-hidden rounded-md border border-border bg-secondary">{url ? (m.kind === "photo" ? <a href={url} target="_blank" rel="noreferrer"><img src={url} alt="Review upload" className="h-full w-full object-cover" /></a> : <video src={url} controls className="h-full w-full object-cover" />) : <Loader2 className="m-auto mt-8 h-5 w-5 animate-spin text-gold-deep" />}<button type="button" aria-label="Delete media" onClick={() => void remove(m)} className="absolute top-1 right-1 grid h-6 w-6 place-items-center rounded-full bg-background/90 text-destructive"><Trash2 className="h-3.5 w-3.5" /></button></div>; })}</div>;
 }

@@ -16,6 +16,14 @@ export const createOrder = createServerFn({ method: "POST" })
   .inputValidator((input) => checkoutSchema.parse(input))
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Link the order to the signed-in customer, verified from their session token.
+    let userId: string | null = null;
+    const { getRequest } = await import("@tanstack/react-start/server");
+    const auth = getRequest().headers.get("authorization");
+    if (auth?.startsWith("Bearer ")) {
+      const { data: u } = await supabaseAdmin.auth.getUser(auth.slice(7));
+      userId = u.user?.id ?? null;
+    }
     // Never trust prices from the browser: load real prices and stock.
     const ids = [...new Set(data.items.map((i) => i.sizeId))];
     const { data: variants, error: vErr } = await supabaseAdmin.from("product_variants")
@@ -35,7 +43,7 @@ export const createOrder = createServerFn({ method: "POST" })
     }).select("id").single();
     if (customerError || !customer) throw customerError ?? new Error("Could not create customer");
     const { data: order, error: orderError } = await supabaseAdmin.from("orders").insert({
-      order_number: orderNumber, customer_id: customer.id, subtotal, delivery: 0, total: subtotal,
+      order_number: orderNumber, customer_id: customer.id, subtotal, delivery: 0, total: subtotal, user_id: userId,
     }).select("id").single();
     if (orderError || !order) throw orderError ?? new Error("Could not create order");
     const { error: itemsError } = await supabaseAdmin.from("order_items").insert(items.map((item) => ({

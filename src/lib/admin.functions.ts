@@ -52,7 +52,7 @@ export const getAdminData = createServerFn({ method: "GET" })
         .order("sort_order")
         .order("created_at"),
       db.from("customers").select("*, orders(id,total,status,created_at)").order("created_at", { ascending: false }),
-      db.from("reviews").select("*").order("created_at", { ascending: false }),
+      db.from("reviews").select("*, review_media(id,kind,storage_path,sort_order), products(name)").order("created_at", { ascending: false }),
       db.from("reels").select("*").order("sort_order"),
       db.from("customer_messages").select("*").order("created_at", { ascending: false }),
       db.from("categories").select("*").order("sort_order").order("name"),

@@ -8,7 +8,7 @@ import { useCart } from "@/lib/cart-context";
 import { inr } from "@/lib/shop-data";
 import { cn } from "@/lib/utils";
 import gheeJar from "@/assets/ghee-jar.jpg";
-import { Reveal, SectionHeading } from "./Reveal";
+import { SectionHeading } from "./Reveal";
 
 type Variant = {
   id: string;
@@ -129,13 +129,13 @@ export function ProductCatalog({ products }: { products: CatalogProduct[] }) {
         <Button variant="outline" className="mt-4" onClick={() => { setSearch(""); setCat("all"); }}>Clear filters</Button>
       </div>}
 
-      <Reveal className="mt-8">
+      <div className="mt-8">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {sorted.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }

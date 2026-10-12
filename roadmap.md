@@ -6,4 +6,6 @@
 - [x] Customer accounts + reviews after purchase with photo/video; admin full delete.
 - [x] Sales & returns chart; profit & loss chart (cost price per pack size).
 - [x] Manage all website images (edit/remove/upload).
-- [ ] Settings section with main features + privacy system; move Sign out into Settings.
+- [x] Move Sign out into Settings and prevent short-screen sidebar overlap.
+- [x] Correct bottom banner text and shop-button contrast in both themes.
+- [ ] Settings section with main features + privacy system (awaiting store details and privacy requirements).
